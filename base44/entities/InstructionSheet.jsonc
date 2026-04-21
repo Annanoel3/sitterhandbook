@@ -1,0 +1,45 @@
+{
+  "name": "InstructionSheet",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Title for this instruction sheet"
+    },
+    "raw_text": {
+      "type": "string",
+      "description": "The raw text input from the user (rambled or typed)"
+    },
+    "photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of uploaded photos"
+    },
+    "photo_labels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Labels/descriptions for each uploaded photo"
+    },
+    "organized_data": {
+      "type": "object",
+      "description": "AI-organized structured data from the raw text"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "organizing",
+        "ready"
+      ],
+      "default": "draft",
+      "description": "Current status of the instruction sheet"
+    }
+  },
+  "required": [
+    "title"
+  ]
+}
