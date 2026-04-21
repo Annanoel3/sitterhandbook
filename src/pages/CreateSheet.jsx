@@ -48,6 +48,7 @@ export default function CreateSheet() {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleVoiceTranscript = (transcript) => {
+    // transcript already includes the existing text prefix (set in VoiceRecorder)
     setText(transcript);
   };
 
@@ -86,8 +87,8 @@ export default function CreateSheet() {
     });
 
     const photoContext = photos
-      .filter(p => p.label)
-      .map((p, i) => `Photo ${i + 1}: ${p.label}`)
+      .filter(p => p.label || p.caption)
+      .map((p, i) => `Photo ${i + 1}: ${p.label}${p.caption ? ` — ${p.caption}` : ''}`)
       .join('\n');
 
     const result = await base44.integrations.Core.InvokeLLM({

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Download, ArrowLeft, Phone, Home, PawPrint, UtensilsCrossed, Pill, Footprints, Heart, Flower2, Fish, Bird, Trash2, AlertTriangle, StickyNote, User, UserCheck, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
-import AIGapChecker from '../components/review/AIGapChecker';
+import AiChecklist from '../components/review/AiChecklist';
 import DraggableSections from '../components/review/DraggableSections';
 
 const categoryConfig = {
@@ -264,22 +264,32 @@ export default function ReviewSheet() {
           </CardContent>
         </Card>
 
-        {/* Photos */}
+        {/* Photos with labels + captions */}
         {sheet.photo_urls?.length > 0 && (
           <div className="mb-8">
-            <h3 className="font-heading text-lg font-semibold mb-3">📸 Photos</h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-              {sheet.photo_urls.map((url, i) => (
-                <div key={url} className="aspect-square rounded-xl overflow-hidden border border-border">
-                  <img src={url} alt={sheet.photo_labels?.[i] || `Photo ${i+1}`} className="w-full h-full object-cover" />
-                </div>
-              ))}
+            <h3 className="font-heading text-lg font-semibold mb-3">📸 Photo Reference Guide</h3>
+            <div className="space-y-3">
+              {sheet.photo_urls.map((url, i) => {
+                const label = sheet.photo_labels?.[i] || `Photo ${i + 1}`;
+                const caption = sheet.photo_captions?.[i] || '';
+                return (
+                  <div key={url} className="flex gap-3 bg-card border border-border/60 rounded-xl p-3">
+                    <div className="w-20 h-20 rounded-lg overflow-hidden border border-border shrink-0">
+                      <img src={url} alt={label} className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{label}</p>
+                      {caption && <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{caption}</p>}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* AI Gap Checker */}
-        <AIGapChecker organizedData={data} rawText={sheet.raw_text} />
+        {/* AI Completeness Checker */}
+        <AiChecklist organizedData={data} rawText={sheet.raw_text} />
 
         {/* Organized Sections — draggable + editable */}
         <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">

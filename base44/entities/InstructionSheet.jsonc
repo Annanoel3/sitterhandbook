@@ -3,37 +3,31 @@
   "type": "object",
   "properties": {
     "title": {
-      "type": "string",
-      "description": "Title for this instruction sheet"
+      "type": "string"
     },
     "raw_text": {
-      "type": "string",
-      "description": "The raw text input from the user (rambled or typed)"
+      "type": "string"
     },
     "photo_urls": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "URLs of uploaded photos"
+      }
     },
     "photo_labels": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Short label for each photo (e.g. 'Max's food drawer')"
+      }
     },
     "photo_captions": {
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "description": "Longer caption/notes for each photo for the sitter"
+      }
     },
     "organized_data": {
-      "type": "object",
-      "description": "AI-organized structured data from the raw text"
+      "type": "object"
     },
     "status": {
       "type": "string",
@@ -42,8 +36,7 @@
         "organizing",
         "ready"
       ],
-      "default": "draft",
-      "description": "Current status of the instruction sheet"
+      "default": "draft"
     }
   },
   "required": [

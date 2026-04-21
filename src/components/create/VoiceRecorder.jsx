@@ -3,23 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Mic, MicOff, Square, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// onTranscript(newText) — called with the full accumulated text so far
-// existingText — text already in the box before recording starts (so we can append)
-export default function VoiceRecorder({ onTranscript, existingText }) {
+export default function VoiceRecorder({ onTranscript, existingText = '' }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const [interimText, setInterimText] = useState('');
   const recognitionRef = useRef(null);
-  const committedTextRef = useRef(''); // finalized speech from THIS session
+  const committedTextRef = useRef('');
   const isRecordingRef = useRef(false);
-  const baseTextRef = useRef(''); // text that existed before this session started
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      setIsSupported(false);
-      return;
-    }
+    if (!SpeechRecognition) { setIsSupported(false); return; }
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -33,11 +27,8 @@ export default function VoiceRecorder({ onTranscript, existingText }) {
         if (result.isFinal) {
           committedTextRef.current += result[0].transcript + ' ';
           setInterimText('');
-          // Combine base text + new speech
-          const combined = baseTextRef.current
-            ? baseTextRef.current.trimEnd() + ' ' + committedTextRef.current.trim()
-            : committedTextRef.current.trim();
-          onTranscript(combined);
+          // Append to whatever was already in the text box
+          onTranscript(committedTextRef.current.trim());
         } else {
           interim += result[0].transcript;
         }
@@ -47,10 +38,7 @@ export default function VoiceRecorder({ onTranscript, existingText }) {
 
     recognition.onerror = (event) => {
       if (event.error === 'aborted') return;
-      if (event.error !== 'no-speech') {
-        setIsRecording(false);
-        isRecordingRef.current = false;
-      }
+      if (event.error !== 'no-speech') { setIsRecording(false); isRecordingRef.current = false; }
     };
 
     recognition.onend = () => {
@@ -60,23 +48,17 @@ export default function VoiceRecorder({ onTranscript, existingText }) {
     };
 
     recognitionRef.current = recognition;
-    return () => {
-      isRecordingRef.current = false;
-      try { recognition.stop(); } catch (e) { /* ignore */ }
-    };
+    return () => { isRecordingRef.current = false; try { recognition.stop(); } catch (e) { /* ignore */ } };
   }, []);
 
   const startRecording = () => {
     if (!recognitionRef.current) return;
-    // Capture whatever text already exists so we can append to it
-    baseTextRef.current = existingText || '';
-    committedTextRef.current = '';
+    // Seed committed text from whatever is already typed so we append, not overwrite
+    committedTextRef.current = existingText ? existingText.trimEnd() + ' ' : '';
     isRecordingRef.current = true;
     setIsRecording(true);
     setInterimText('');
-    try {
-      recognitionRef.current.start();
-    } catch (e) {
+    try { recognitionRef.current.start(); } catch (e) {
       setTimeout(() => { try { recognitionRef.current.start(); } catch (e2) { /* ignore */ } }, 100);
     }
   };
@@ -96,8 +78,6 @@ export default function VoiceRecorder({ onTranscript, existingText }) {
       </div>
     );
   }
-
-  const hasExistingText = (existingText || '').trim().length > 0;
 
   return (
     <div className="space-y-3">
@@ -128,16 +108,16 @@ export default function VoiceRecorder({ onTranscript, existingText }) {
         </div>
         <div className="text-sm space-y-0.5">
           {isRecording ? (
-            <p className="text-destructive font-medium animate-pulse">● Recording... tap to stop</p>
-          ) : hasExistingText ? (
-            <>
-              <p className="text-muted-foreground font-medium flex items-center gap-1.5">
-                <RotateCcw className="w-3.5 h-3.5" /> Tap to continue from where you left off
-              </p>
-              <p className="text-xs text-muted-foreground">Your new speech will be added to your existing notes</p>
-            </>
+            <p className="text-destructive font-medium animate-pulse">● Recording... tap to pause</p>
           ) : (
-            <p className="text-muted-foreground">Tap to start talking — just speak naturally!</p>
+            <p className="text-muted-foreground">
+              {existingText ? (
+                <span className="flex items-center gap-1.5">
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Tap to continue speaking — will append to your notes
+                </span>
+              ) : 'Tap to start talking — just speak naturally!'}
+            </p>
           )}
         </div>
       </div>
