@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { Loader2, Download, ArrowLeft, Phone, Home, PawPrint, UtensilsCrossed, Pill, Footprints, Heart, Flower2, Fish, Bird, Trash2, AlertTriangle, StickyNote } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Loader2, Download, ArrowLeft, Phone, Home, PawPrint, UtensilsCrossed, Pill, Footprints, Heart, Flower2, Fish, Bird, Trash2, AlertTriangle, StickyNote, User, UserCheck, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
 import CategorySection from '../components/review/CategorySection';
 
@@ -14,7 +15,7 @@ const categoryConfig = {
   medications: { icon: Pill, title: 'Medications', color: 'bg-destructive/10 text-destructive' },
   walking_exercise: { icon: Footprints, title: 'Walking & Exercise', color: 'bg-primary/10 text-primary' },
   pet_quirks: { icon: Heart, title: 'Pet Quirks & Personality', color: 'bg-accent/20 text-accent-foreground' },
-  plants_garden: { icon: Flower2, title: 'Plants & Garden', color: 'bg-primary/15 text-primary' },
+  plants_garden: { icon: Flower2, title: 'Plants & Garden', color: 'bg-primary/10 text-primary' },
   fish_aquarium: { icon: Fish, title: 'Fish & Aquarium', color: 'bg-primary/10 text-primary' },
   other_pets: { icon: Bird, title: 'Other Pets', color: 'bg-secondary text-secondary-foreground' },
   house_rules: { icon: Trash2, title: 'House Rules & Schedules', color: 'bg-muted text-muted-foreground' },
@@ -37,9 +38,7 @@ export default function ReviewSheet() {
 
   const loadSheet = async () => {
     const sheets = await base44.entities.InstructionSheet.filter({ id: sheetId });
-    if (sheets.length > 0) {
-      setSheet(sheets[0]);
-    }
+    if (sheets.length > 0) setSheet(sheets[0]);
     setLoading(false);
   };
 
@@ -51,97 +50,128 @@ export default function ReviewSheet() {
 
   const handleDownloadPDF = async () => {
     setGenerating(true);
-    
-    const photoSection = sheet.photo_urls?.length
-      ? `\n\nPHOTOS INCLUDED:\n${sheet.photo_urls.map((url, i) => `- ${sheet.photo_labels?.[i] || `Photo ${i+1}`}: ${url}`).join('\n')}`
-      : '';
 
-    let sectionsText = '';
-    const data = sheet.organized_data;
-    const orderedKeys = Object.keys(categoryConfig);
-    
-    for (const key of orderedKeys) {
-      if (data[key]) {
-        const config = categoryConfig[key];
-        sectionsText += `\n\n## ${config.title}\n${data[key]}`;
-      }
-    }
-
-    const pdfPrompt = `Create a beautifully formatted pet sitter instruction sheet in clean markdown. 
-Title: "${sheet.title}"
-
-Content sections:
-${sectionsText}
-${photoSection}
-
-Format it as a clean, well-organized document with clear headings, bullet points, and spacing. Make it professional but warm and friendly. Add a small note at the top that says "Prepared with love for our pet sitter 🐾" and the date. Include all the information provided - do not skip anything.`;
-
-    const markdown = await base44.integrations.Core.InvokeLLM({ prompt: pdfPrompt });
-
-    // Generate PDF using jspdf
     const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const margin = 20;
-    const maxWidth = pageWidth - margin * 2;
-    let y = 20;
 
-    const addText = (text, fontSize, isBold, color) => {
-      doc.setFontSize(fontSize);
-      doc.setFont('helvetica', isBold ? 'bold' : 'normal');
-      if (color) doc.setTextColor(color[0], color[1], color[2]);
-      else doc.setTextColor(40, 40, 40);
-      
-      const lines = doc.splitTextToSize(text, maxWidth);
-      for (const line of lines) {
-        if (y > 275) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.text(line, margin, y);
-        y += fontSize * 0.45;
-      }
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 18;
+    const maxWidth = pageWidth - margin * 2;
+    let y = 15;
+
+    const checkPage = (needed = 10) => {
+      if (y + needed > 280) { doc.addPage(); y = 15; }
     };
 
-    const addSpacing = (amount) => { y += amount; };
+    const addText = (text, fontSize, isBold, color, xOverride) => {
+      doc.setFontSize(fontSize);
+      doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+      doc.setTextColor(...(color || [40, 40, 40]));
+      const lines = doc.splitTextToSize(String(text), maxWidth);
+      lines.forEach(line => {
+        checkPage(fontSize * 0.45 + 1);
+        doc.text(line, xOverride !== undefined ? xOverride : margin, y);
+        y += fontSize * 0.42;
+      });
+    };
 
-    // Title
-    addText(sheet.title || 'Pet Sitter Instructions', 22, true, [46, 125, 87]);
-    addSpacing(3);
-    addText(`Prepared with love for our pet sitter 🐾  •  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, 9, false, [120, 120, 120]);
-    addSpacing(2);
-    
-    // Line
-    doc.setDrawColor(200, 200, 200);
-    doc.line(margin, y, pageWidth - margin, y);
-    addSpacing(6);
+    const addSpacing = (n) => { y += n; };
 
-    // Sections
+    const data = sheet.organized_data || {};
+    const owner = data._owner || {};
+    const sitter = data._sitter || {};
+    const pay = data._pay || '';
+
+    // ── HEADER BANNER ──
+    doc.setFillColor(46, 125, 87);
+    doc.rect(0, 0, pageWidth, 38, 'F');
+
+    // Owner corner (left)
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 255, 255);
+    doc.text('HOME OWNER', margin, 10);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    if (owner.name) doc.text(owner.name, margin, 16);
+    if (owner.phone) doc.text(owner.phone, margin, 22);
+    if (owner.email) doc.text(owner.email, margin, 28);
+
+    // Pet Sitter corner (right)
+    const rightX = pageWidth - margin;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text('PET SITTER', rightX, 10, { align: 'right' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    if (sitter.name) doc.text(sitter.name, rightX, 16, { align: 'right' });
+    if (sitter.phone) doc.text(sitter.phone, rightX, 22, { align: 'right' });
+
+    // Center title
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text(sheet.title || 'Pet Sitter Instructions', pageWidth / 2, 18, { align: 'center' });
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(200, 240, 220);
+    doc.text(`Prepared with love 🐾  •  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, 26, { align: 'center' });
+
+    // Pay rate badge
+    if (pay) {
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(pageWidth / 2 - 28, 30, 56, 7, 2, 2, 'F');
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(46, 125, 87);
+      doc.text(`Agreed Rate: ${pay}`, pageWidth / 2, 35, { align: 'center' });
+    }
+
+    y = 46;
+
+    // ── SECTIONS ──
+    const orderedKeys = Object.keys(categoryConfig);
     for (const key of orderedKeys) {
       if (data[key]) {
+        checkPage(18);
         const config = categoryConfig[key];
-        addText(config.title.toUpperCase(), 11, true, [46, 125, 87]);
-        addSpacing(2);
-        
+
+        // Section header bg
+        doc.setFillColor(240, 250, 244);
+        doc.roundedRect(margin - 3, y - 4, maxWidth + 6, 9, 1.5, 1.5, 'F');
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(46, 125, 87);
+        doc.text(config.title.toUpperCase(), margin, y + 2);
+        y += 8;
+
         const contentLines = data[key].split('\n');
         for (const line of contentLines) {
-          if (line.trim()) {
-            addText(line.trim(), 10, false);
+          const trimmed = line.trim();
+          if (trimmed) {
+            checkPage(7);
+            addText(trimmed, 10, false, [50, 50, 50]);
             addSpacing(1);
           }
         }
-        addSpacing(4);
+        addSpacing(5);
       }
     }
 
     // Photo references
     if (sheet.photo_urls?.length) {
-      addText('PHOTOS REFERENCE', 11, true, [46, 125, 87]);
-      addSpacing(2);
+      checkPage(18);
+      doc.setFillColor(240, 250, 244);
+      doc.roundedRect(margin - 3, y - 4, maxWidth + 6, 9, 1.5, 1.5, 'F');
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(46, 125, 87);
+      doc.text('PHOTOS REFERENCE', margin, y + 2);
+      y += 8;
       sheet.photo_urls.forEach((url, i) => {
         const label = sheet.photo_labels?.[i] || `Photo ${i + 1}`;
-        addText(`• ${label}`, 10, false);
+        addText(`• ${label}`, 10, false, [50, 50, 50]);
         addSpacing(1);
       });
     }
@@ -162,47 +192,73 @@ Format it as a clean, well-organized document with clear headings, bullet points
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <p className="text-muted-foreground">Sheet not found</p>
-        <Link to="/create">
-          <Button variant="outline">Create a new sheet</Button>
-        </Link>
+        <Link to="/create"><Button variant="outline">Create a new sheet</Button></Link>
       </div>
     );
   }
 
   const data = sheet.organized_data || {};
+  const owner = data._owner || {};
+  const sitter = data._sitter || {};
+  const pay = data._pay || '';
 
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-6 py-10">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
           <Link to="/create" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to editor
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="font-heading text-3xl font-bold">{sheet.title}</h1>
-              <p className="text-muted-foreground mt-1">Review and edit, then download your PDF</p>
+              <p className="text-muted-foreground mt-1">Review and edit each section, then download your PDF</p>
             </div>
-            <Button
-              size="lg"
-              onClick={handleDownloadPDF}
-              disabled={generating}
-              className="rounded-xl shadow-lg shadow-primary/20 shrink-0"
-            >
-              {generating ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 mr-2" />
-              )}
+            <Button size="lg" onClick={handleDownloadPDF} disabled={generating} className="rounded-xl shadow-lg shadow-primary/20 shrink-0">
+              {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
               Download PDF
             </Button>
           </div>
         </motion.div>
+
+        {/* Owner / Sitter / Pay summary bar */}
+        <Card className="mb-8 border-primary/20 bg-primary/5 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border/50">
+              <div className="p-4 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-primary uppercase tracking-wide mb-0.5">Home Owner</p>
+                  <p className="text-sm font-medium">{owner.name || '—'}</p>
+                  {owner.phone && <p className="text-xs text-muted-foreground">{owner.phone}</p>}
+                  {owner.email && <p className="text-xs text-muted-foreground">{owner.email}</p>}
+                </div>
+              </div>
+              <div className="p-4 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center shrink-0">
+                  <UserCheck className="w-4 h-4 text-accent-foreground" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-accent-foreground uppercase tracking-wide mb-0.5">Pet Sitter</p>
+                  <p className="text-sm font-medium">{sitter.name || '—'}</p>
+                  {sitter.phone && <p className="text-xs text-muted-foreground">{sitter.phone}</p>}
+                </div>
+              </div>
+              <div className="p-4 flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                  <DollarSign className="w-4 h-4 text-secondary-foreground" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide mb-0.5 text-secondary-foreground">Agreed Rate</p>
+                  <p className="text-sm font-medium">{pay || '—'}</p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Photos */}
         {sheet.photo_urls?.length > 0 && (
@@ -218,17 +274,12 @@ Format it as a clean, well-organized document with clear headings, bullet points
           </div>
         )}
 
-        {/* Organized Sections */}
+        {/* Organized Sections — all editable */}
         <div className="space-y-4">
           {Object.keys(categoryConfig).map((key, i) => {
             const config = categoryConfig[key];
             return (
-              <motion.div
-                key={key}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
+              <motion.div key={key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
                 <CategorySection
                   icon={config.icon}
                   title={config.title}
@@ -243,23 +294,12 @@ Format it as a clean, well-organized document with clear headings, bullet points
 
         {/* Bottom actions */}
         <div className="mt-10 pb-12 flex flex-col sm:flex-row gap-4">
-          <Button
-            size="lg"
-            onClick={handleDownloadPDF}
-            disabled={generating}
-            className="flex-1 rounded-xl py-6 shadow-lg shadow-primary/20"
-          >
-            {generating ? (
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-            ) : (
-              <Download className="w-5 h-5 mr-2" />
-            )}
+          <Button size="lg" onClick={handleDownloadPDF} disabled={generating} className="flex-1 rounded-xl py-6 shadow-lg shadow-primary/20">
+            {generating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Download className="w-5 h-5 mr-2" />}
             Download PDF
           </Button>
           <Link to="/create" className="flex-1">
-            <Button size="lg" variant="outline" className="w-full rounded-xl py-6">
-              Create Another Sheet
-            </Button>
+            <Button size="lg" variant="outline" className="w-full rounded-xl py-6">Create Another Sheet</Button>
           </Link>
         </div>
       </div>

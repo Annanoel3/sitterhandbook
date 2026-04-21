@@ -5,7 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Loader2, PawPrint, Lightbulb } from 'lucide-react';
+import { ArrowRight, Loader2, PawPrint, Lightbulb, DollarSign } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import VoiceRecorder from '../components/create/VoiceRecorder';
@@ -27,18 +27,28 @@ const prompts = [
 
 export default function CreateSheet() {
   const navigate = useNavigate();
+
+  // Owner info
+  const [ownerName, setOwnerName] = useState('');
+  const [ownerPhone, setOwnerPhone] = useState('');
+  const [ownerEmail, setOwnerEmail] = useState('');
+
+  // Pet sitter info
+  const [sitterName, setSitterName] = useState('');
+  const [sitterPhone, setSitterPhone] = useState('');
+
+  // Payment rate
+  const [payRate, setPayRate] = useState('');
+  const [payPeriod, setPayPeriod] = useState('per visit');
+
+  // Sheet details
   const [title, setTitle] = useState('');
   const [text, setText] = useState('');
   const [photos, setPhotos] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleVoiceTranscript = (transcript) => {
-    setText(prev => {
-      if (prev.trim()) {
-        return prev + ' ' + transcript;
-      }
-      return transcript;
-    });
+    setText(transcript);
   };
 
   const handleSubmit = async () => {
@@ -46,12 +56,32 @@ export default function CreateSheet() {
 
     setIsProcessing(true);
 
+    const ownerInfo = [
+      ownerName && `Owner: ${ownerName}`,
+      ownerPhone && `Phone: ${ownerPhone}`,
+      ownerEmail && `Email: ${ownerEmail}`,
+    ].filter(Boolean).join('\n');
+
+    const sitterInfo = [
+      sitterName && `Pet Sitter: ${sitterName}`,
+      sitterPhone && `Sitter Phone: ${sitterPhone}`,
+    ].filter(Boolean).join('\n');
+
+    const payInfo = payRate ? `Agreed pay rate: $${payRate} ${payPeriod}` : '';
+
+    const fullNotes = [ownerInfo, sitterInfo, payInfo, text].filter(Boolean).join('\n\n');
+
     const sheet = await base44.entities.InstructionSheet.create({
       title: title || 'My Pet Sitter Instructions',
       raw_text: text,
       photo_urls: photos.map(p => p.url),
       photo_labels: photos.map(p => p.label),
       status: 'organizing',
+      organized_data: {
+        _owner: { name: ownerName, phone: ownerPhone, email: ownerEmail },
+        _sitter: { name: sitterName, phone: sitterPhone },
+        _pay: payRate ? `$${payRate} ${payPeriod}` : '',
+      },
     });
 
     const photoContext = photos
@@ -63,34 +93,34 @@ export default function CreateSheet() {
       prompt: `You are an expert at organizing pet/house sitting instructions. Take the following rambled notes from a pet owner and organize them into a clear, comprehensive instruction sheet.
 
 RAW NOTES:
-${text}
+${fullNotes}
 
 ${photoContext ? `PHOTO DESCRIPTIONS:\n${photoContext}` : ''}
 
-Organize into these categories (only include categories that have relevant info). For each category, write clear, easy-to-follow bullet points:
+Organize into these categories (only include categories that have relevant info). For each category, write clear, easy-to-follow bullet points using "• " prefix:
 
-1. owner_contact - Owner's name, phone, email, emergency contacts, vet info
-2. house_access - Door codes, key locations, alarm systems, wifi password, parking
-3. pets_overview - Names, breeds, ages, personalities, quirks for each pet
-4. feeding_schedule - What to feed, when, how much, where food is stored, treats
+1. owner_contact - Owner's name, phone, email, trip destination, return date, emergency contacts, vet name/number
+2. house_access - Door codes, key locations, alarm systems, wifi password, parking, how to enter
+3. pets_overview - Names, breeds, ages, personalities of each pet
+4. feeding_schedule - What to feed each pet, when, how much, where food is stored, treats allowed
 5. medications - Any medications, dosages, times, how to administer
-6. walking_exercise - Walk schedules, leash locations, favorite routes, dog park rules
-7. pet_quirks - Behavioral notes, fears, things to avoid, comfort items
-8. plants_garden - Watering schedule, which plants, how much water, indoor vs outdoor
-9. fish_aquarium - Feeding, tank maintenance, temperature, filter info
-10. other_pets - Any other animals (birds, reptiles, etc.) and their care
-11. house_rules - Garbage schedule, mail, packages, thermostat, lights, appliances
-12. emergency_info - Emergency vet, nearest animal hospital, poison control
-13. additional_notes - Anything else that doesn't fit above
+6. walking_exercise - Walk schedules, leash locations, favorite routes, exercise needs
+7. pet_quirks - Behavioral notes, fears, things to avoid, comfort items, sleeping spots
+8. plants_garden - Which plants, watering schedule, how much water, indoor vs outdoor
+9. fish_aquarium - Feeding schedule, tank maintenance, temperature, filter notes
+10. other_pets - Any other animals (birds, reptiles, etc.) and their specific care
+11. house_rules - Garbage schedule, mail handling, thermostat settings, lights, appliances, quiet hours
+12. emergency_info - Emergency vet address/phone, nearest animal hospital, poison control (888-426-4435), what to do if pet is sick
+13. additional_notes - Anything else the sitter should know
 
-Return ONLY valid JSON with this structure (skip empty categories):
+Return ONLY valid JSON with these exact keys (omit keys with no content):
 {
-  "owner_contact": "bullet point text...",
-  "house_access": "bullet point text...",
+  "owner_contact": "bullet points...",
+  "house_access": "bullet points...",
   ...
 }
 
-Each value should be a string with clear bullet points using "• " prefix. Make it friendly but thorough.`,
+Make it warm, clear, and thorough.`,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -111,8 +141,16 @@ Each value should be a string with clear bullet points using "• " prefix. Make
       },
     });
 
+    // Merge AI result with owner/sitter/pay meta
+    const finalData = {
+      ...result,
+      _owner: { name: ownerName, phone: ownerPhone, email: ownerEmail },
+      _sitter: { name: sitterName, phone: sitterPhone },
+      _pay: payRate ? `$${payRate} ${payPeriod}` : '',
+    };
+
     await base44.entities.InstructionSheet.update(sheet.id, {
-      organized_data: result,
+      organized_data: finalData,
       status: 'ready',
     });
 
@@ -123,26 +161,15 @@ Each value should be a string with clear bullet points using "• " prefix. Make
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-6 py-10">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="font-heading text-3xl md:text-4xl font-bold mb-2">
-            Tell Us Everything
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Talk, type, or ramble — we'll make sense of it all.
-          </p>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+          <h1 className="font-heading text-3xl md:text-4xl font-bold mb-2">Tell Us Everything</h1>
+          <p className="text-muted-foreground text-lg">Talk, type, or ramble — we'll make sense of it all.</p>
         </motion.div>
 
         <div className="space-y-8">
           {/* Title */}
           <div>
-            <Label htmlFor="title" className="text-sm font-medium mb-2 block">
-              Sheet Title (optional)
-            </Label>
+            <Label htmlFor="title" className="text-sm font-medium mb-2 block">Sheet Title (optional)</Label>
             <Input
               id="title"
               placeholder="e.g. Instructions for Max & Bella — June Trip"
@@ -152,10 +179,78 @@ Each value should be a string with clear bullet points using "• " prefix. Make
             />
           </div>
 
+          {/* Owner + Sitter Info */}
+          <Card className="border-border/60 bg-card">
+            <CardContent className="p-6">
+              <h3 className="font-heading text-lg font-semibold mb-5">👤 Owner & Sitter Info</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Owner */}
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-primary uppercase tracking-wide">Home Owner</p>
+                  <div>
+                    <Label className="text-xs mb-1 block">Name</Label>
+                    <Input placeholder="Your name" value={ownerName} onChange={e => setOwnerName(e.target.value)} className="rounded-lg" />
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1 block">Phone</Label>
+                    <Input placeholder="Best number to reach you" value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} className="rounded-lg" />
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1 block">Email</Label>
+                    <Input placeholder="Your email" value={ownerEmail} onChange={e => setOwnerEmail(e.target.value)} className="rounded-lg" />
+                  </div>
+                </div>
+                {/* Sitter */}
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-accent-foreground uppercase tracking-wide">Pet Sitter</p>
+                  <div>
+                    <Label className="text-xs mb-1 block">Sitter's Name</Label>
+                    <Input placeholder="Sitter's name" value={sitterName} onChange={e => setSitterName(e.target.value)} className="rounded-lg" />
+                  </div>
+                  <div>
+                    <Label className="text-xs mb-1 block">Sitter's Phone</Label>
+                    <Input placeholder="Sitter's phone number" value={sitterPhone} onChange={e => setSitterPhone(e.target.value)} className="rounded-lg" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Pay Rate */}
+              <div className="mt-5 pt-5 border-t border-border/50">
+                <p className="text-sm font-semibold uppercase tracking-wide mb-3 flex items-center gap-2">
+                  <DollarSign className="w-4 h-4" /> Agreed Pay Rate
+                </p>
+                <div className="flex items-center gap-3">
+                  <span className="text-muted-foreground text-sm">$</span>
+                  <Input
+                    placeholder="Amount (e.g. 50)"
+                    value={payRate}
+                    onChange={e => setPayRate(e.target.value)}
+                    className="rounded-lg w-32"
+                    type="number"
+                    min="0"
+                  />
+                  <select
+                    value={payPeriod}
+                    onChange={e => setPayPeriod(e.target.value)}
+                    className="rounded-lg border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  >
+                    <option>per visit</option>
+                    <option>per day</option>
+                    <option>per hour</option>
+                    <option>per week</option>
+                    <option>flat rate</option>
+                  </select>
+                  <span className="text-sm text-muted-foreground">(included in your PDF)</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Voice Recorder */}
           <Card className="border-border/60 bg-card">
             <CardContent className="p-6">
               <h3 className="font-heading text-lg font-semibold mb-4">🎤 Voice Input</h3>
+              <p className="text-sm text-muted-foreground mb-4">Just speak naturally about everything your sitter needs to know. No need to be organized — we'll handle that!</p>
               <VoiceRecorder onTranscript={handleVoiceTranscript} />
             </CardContent>
           </Card>
@@ -167,7 +262,7 @@ Each value should be a string with clear bullet points using "• " prefix. Make
               <span className="text-xs text-muted-foreground">{text.length} characters</span>
             </div>
             <Textarea
-              placeholder="Just start typing or rambling! For example: 'So Max eats twice a day, morning around 7am and evening around 6pm. He gets one cup of the blue bag kibble that's in the pantry bottom shelf. Oh and he needs his joint supplement — it's the little brown bottle next to his food...'"
+              placeholder="Just start typing or rambling! For example: 'So Max eats twice a day, morning around 7am and evening around 6pm. He gets one cup of the blue bag kibble that's in the pantry bottom shelf...'"
               value={text}
               onChange={(e) => setText(e.target.value)}
               className="min-h-[200px] text-base leading-relaxed rounded-xl resize-y"
@@ -179,7 +274,7 @@ Each value should be a string with clear bullet points using "• " prefix. Make
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Lightbulb className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-primary">Need ideas? Cover these topics:</span>
+                <span className="text-sm font-medium text-primary">Need ideas? Tap to add these topics:</span>
               </div>
               <div className="flex flex-wrap gap-2">
                 {prompts.map((prompt) => (
@@ -213,16 +308,9 @@ Each value should be a string with clear bullet points using "• " prefix. Make
               className="w-full rounded-xl py-6 text-base shadow-lg shadow-primary/20"
             >
               {isProcessing ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Organizing your notes...
-                </>
+                <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Organizing your notes...</>
               ) : (
-                <>
-                  <PawPrint className="w-5 h-5 mr-2" />
-                  Organize & Create Sheet
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </>
+                <><PawPrint className="w-5 h-5 mr-2" />Organize & Create Sheet<ArrowRight className="w-5 h-5 ml-2" /></>
               )}
             </Button>
           </div>

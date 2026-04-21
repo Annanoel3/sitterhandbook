@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import CreateSheet from './pages/CreateSheet';
 import ReviewSheet from './pages/ReviewSheet';
 import MySheets from './pages/MySheets';
+import Settings from './pages/Settings';
 import AppLayout from './components/layout/AppLayout';
 
 const AuthenticatedApp = () => {
@@ -42,6 +43,7 @@ const AuthenticatedApp = () => {
         <Route path="/create" element={<CreateSheet />} />
         <Route path="/review" element={<ReviewSheet />} />
         <Route path="/sheets" element={<MySheets />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

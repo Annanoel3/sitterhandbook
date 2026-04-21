@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { PawPrint, FileText, Plus } from 'lucide-react';
+import { PawPrint, FileText, Plus, Settings } from 'lucide-react';
 
 export default function Navbar() {
   const location = useLocation();
@@ -9,6 +9,7 @@ export default function Navbar() {
     { to: '/', label: 'Home', icon: PawPrint },
     { to: '/sheets', label: 'My Sheets', icon: FileText },
     { to: '/create', label: 'New Sheet', icon: Plus },
+    { to: '/settings', label: 'Settings', icon: Settings },
   ];
 
   return (
