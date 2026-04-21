@@ -22,16 +22,19 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
 
     recognition.onresult = (event) => {
       let interim = '';
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const result = event.results[i];
-        if (result.isFinal) {
-          committedTextRef.current += result[0].transcript + ' ';
-          setInterimText('');
-          // Append to whatever was already in the text box
-          onTranscript(committedTextRef.current.trim());
+      // Rebuild committed text from all final results
+      let finalText = '';
+      for (let i = 0; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalText += event.results[i][0].transcript + ' ';
         } else {
-          interim += result[0].transcript;
+          interim += event.results[i][0].transcript;
         }
+      }
+      if (finalText) {
+        committedTextRef.current = (existingText ? existingText.trimEnd() + ' ' : '') + finalText;
+        setInterimText('');
+        onTranscript(committedTextRef.current.trim());
       }
       if (interim) setInterimText(interim);
     };
@@ -53,8 +56,7 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
 
   const startRecording = () => {
     if (!recognitionRef.current) return;
-    // Seed committed text from whatever is already typed so we append, not overwrite
-    committedTextRef.current = existingText ? existingText.trimEnd() + ' ' : '';
+    committedTextRef.current = '';
     isRecordingRef.current = true;
     setIsRecording(true);
     setInterimText('');
