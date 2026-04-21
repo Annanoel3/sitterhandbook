@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Square } from 'lucide-react';
+import { Mic, MicOff, Square, RotateCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function VoiceRecorder({ onTranscript }) {
+// onTranscript(newText) — called with the full accumulated text so far
+// existingText — text already in the box before recording starts (so we can append)
+export default function VoiceRecorder({ onTranscript, existingText }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const [interimText, setInterimText] = useState('');
   const recognitionRef = useRef(null);
-  const committedTextRef = useRef(''); // Only finalized text
+  const committedTextRef = useRef(''); // finalized speech from THIS session
   const isRecordingRef = useRef(false);
+  const baseTextRef = useRef(''); // text that existed before this session started
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -25,23 +28,21 @@ export default function VoiceRecorder({ onTranscript }) {
 
     recognition.onresult = (event) => {
       let interim = '';
-
-      // Only look at NEW results from resultIndex onward
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          // Append finalized text to committed store
           committedTextRef.current += result[0].transcript + ' ';
           setInterimText('');
-          onTranscript(committedTextRef.current.trim());
+          // Combine base text + new speech
+          const combined = baseTextRef.current
+            ? baseTextRef.current.trimEnd() + ' ' + committedTextRef.current.trim()
+            : committedTextRef.current.trim();
+          onTranscript(combined);
         } else {
           interim += result[0].transcript;
         }
       }
-
-      if (interim) {
-        setInterimText(interim);
-      }
+      if (interim) setInterimText(interim);
     };
 
     recognition.onerror = (event) => {
@@ -53,41 +54,38 @@ export default function VoiceRecorder({ onTranscript }) {
     };
 
     recognition.onend = () => {
-      // Auto-restart only if still in recording mode
       if (isRecordingRef.current) {
         try { recognition.start(); } catch (e) { /* ignore */ }
       }
     };
 
     recognitionRef.current = recognition;
-
     return () => {
       isRecordingRef.current = false;
       try { recognition.stop(); } catch (e) { /* ignore */ }
     };
   }, []);
 
-  const toggleRecording = () => {
+  const startRecording = () => {
     if (!recognitionRef.current) return;
-
-    if (isRecordingRef.current) {
-      isRecordingRef.current = false;
-      setIsRecording(false);
-      setInterimText('');
-      try { recognitionRef.current.stop(); } catch (e) { /* ignore */ }
-    } else {
-      committedTextRef.current = '';
-      isRecordingRef.current = true;
-      setIsRecording(true);
-      setInterimText('');
-      try {
-        recognitionRef.current.start();
-      } catch (e) {
-        setTimeout(() => {
-          try { recognitionRef.current.start(); } catch (e2) { /* ignore */ }
-        }, 100);
-      }
+    // Capture whatever text already exists so we can append to it
+    baseTextRef.current = existingText || '';
+    committedTextRef.current = '';
+    isRecordingRef.current = true;
+    setIsRecording(true);
+    setInterimText('');
+    try {
+      recognitionRef.current.start();
+    } catch (e) {
+      setTimeout(() => { try { recognitionRef.current.start(); } catch (e2) { /* ignore */ } }, 100);
     }
+  };
+
+  const stopRecording = () => {
+    isRecordingRef.current = false;
+    setIsRecording(false);
+    setInterimText('');
+    try { recognitionRef.current.stop(); } catch (e) { /* ignore */ }
   };
 
   if (!isSupported) {
@@ -98,6 +96,8 @@ export default function VoiceRecorder({ onTranscript }) {
       </div>
     );
   }
+
+  const hasExistingText = (existingText || '').trim().length > 0;
 
   return (
     <div className="space-y-3">
@@ -116,7 +116,7 @@ export default function VoiceRecorder({ onTranscript }) {
           <Button
             type="button"
             size="lg"
-            onClick={toggleRecording}
+            onClick={isRecording ? stopRecording : startRecording}
             className={`relative z-10 rounded-full w-14 h-14 p-0 shadow-lg transition-all ${
               isRecording
                 ? 'bg-destructive hover:bg-destructive/90 shadow-destructive/30'
@@ -126,16 +126,22 @@ export default function VoiceRecorder({ onTranscript }) {
             {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </Button>
         </div>
-        <div className="text-sm">
+        <div className="text-sm space-y-0.5">
           {isRecording ? (
-            <span className="text-destructive font-medium animate-pulse">● Recording... tap to stop</span>
+            <p className="text-destructive font-medium animate-pulse">● Recording... tap to stop</p>
+          ) : hasExistingText ? (
+            <>
+              <p className="text-muted-foreground font-medium flex items-center gap-1.5">
+                <RotateCcw className="w-3.5 h-3.5" /> Tap to continue from where you left off
+              </p>
+              <p className="text-xs text-muted-foreground">Your new speech will be added to your existing notes</p>
+            </>
           ) : (
-            <span className="text-muted-foreground">Tap to start talking — just speak naturally!</span>
+            <p className="text-muted-foreground">Tap to start talking — just speak naturally!</p>
           )}
         </div>
       </div>
 
-      {/* Live interim preview */}
       {isRecording && interimText && (
         <div className="ml-1 text-sm text-muted-foreground italic bg-muted/50 rounded-lg px-3 py-2 border border-border/50">
           <span className="opacity-60">Hearing: </span>{interimText}

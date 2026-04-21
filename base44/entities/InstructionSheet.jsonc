@@ -22,7 +22,14 @@
       "items": {
         "type": "string"
       },
-      "description": "Labels/descriptions for each uploaded photo"
+      "description": "Short label for each photo (e.g. 'Max's food drawer')"
+    },
+    "photo_captions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Longer caption/notes for each photo for the sitter"
     },
     "organized_data": {
       "type": "object",

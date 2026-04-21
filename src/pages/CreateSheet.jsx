@@ -76,6 +76,7 @@ export default function CreateSheet() {
       raw_text: text,
       photo_urls: photos.map(p => p.url),
       photo_labels: photos.map(p => p.label),
+      photo_captions: photos.map(p => p.caption || ''),
       status: 'organizing',
       organized_data: {
         _owner: { name: ownerName, phone: ownerPhone, email: ownerEmail },
@@ -251,7 +252,7 @@ Make it warm, clear, and thorough.`,
             <CardContent className="p-6">
               <h3 className="font-heading text-lg font-semibold mb-4">🎤 Voice Input</h3>
               <p className="text-sm text-muted-foreground mb-4">Just speak naturally about everything your sitter needs to know. No need to be organized — we'll handle that!</p>
-              <VoiceRecorder onTranscript={handleVoiceTranscript} />
+              <VoiceRecorder onTranscript={handleVoiceTranscript} existingText={text} />
             </CardContent>
           </Card>
 

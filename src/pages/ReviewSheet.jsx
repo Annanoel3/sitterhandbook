@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Loader2, Download, ArrowLeft, Phone, Home, PawPrint, UtensilsCrossed, Pill, Footprints, Heart, Flower2, Fish, Bird, Trash2, AlertTriangle, StickyNote, User, UserCheck, DollarSign } from 'lucide-react';
 import { motion } from 'framer-motion';
-import CategorySection from '../components/review/CategorySection';
+import AIGapChecker from '../components/review/AIGapChecker';
+import DraggableSections from '../components/review/DraggableSections';
 
 const categoryConfig = {
   owner_contact: { icon: Phone, title: 'Owner Contact Info', color: 'bg-primary/10 text-primary' },
@@ -27,6 +28,7 @@ export default function ReviewSheet() {
   const [sheet, setSheet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [sectionOrder, setSectionOrder] = useState(Object.keys(categoryConfig));
 
   const urlParams = new URLSearchParams(window.location.search);
   const sheetId = urlParams.get('id');
@@ -130,8 +132,8 @@ export default function ReviewSheet() {
 
     y = 46;
 
-    // ── SECTIONS ──
-    const orderedKeys = Object.keys(categoryConfig);
+    // ── SECTIONS — respect user's drag order ──
+    const orderedKeys = sectionOrder;
     for (const key of orderedKeys) {
       if (data[key]) {
         checkPage(18);
@@ -159,7 +161,7 @@ export default function ReviewSheet() {
       }
     }
 
-    // Photo references
+    // Photo references with captions
     if (sheet.photo_urls?.length) {
       checkPage(18);
       doc.setFillColor(240, 250, 244);
@@ -167,11 +169,13 @@ export default function ReviewSheet() {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(46, 125, 87);
-      doc.text('PHOTOS REFERENCE', margin, y + 2);
+      doc.text('PHOTO REFERENCE GUIDE', margin, y + 2);
       y += 8;
       sheet.photo_urls.forEach((url, i) => {
         const label = sheet.photo_labels?.[i] || `Photo ${i + 1}`;
-        addText(`• ${label}`, 10, false, [50, 50, 50]);
+        const caption = sheet.photo_captions?.[i] || '';
+        addText(`• ${label}`, 10, true, [50, 50, 50]);
+        if (caption) addText(`  ${caption}`, 9, false, [90, 90, 90]);
         addSpacing(1);
       });
     }
@@ -274,23 +278,20 @@ export default function ReviewSheet() {
           </div>
         )}
 
-        {/* Organized Sections — all editable */}
-        <div className="space-y-4">
-          {Object.keys(categoryConfig).map((key, i) => {
-            const config = categoryConfig[key];
-            return (
-              <motion.div key={key} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }}>
-                <CategorySection
-                  icon={config.icon}
-                  title={config.title}
-                  color={config.color}
-                  content={data[key]}
-                  onUpdate={(val) => updateCategory(key, val)}
-                />
-              </motion.div>
-            );
-          })}
-        </div>
+        {/* AI Gap Checker */}
+        <AIGapChecker organizedData={data} rawText={sheet.raw_text} />
+
+        {/* Organized Sections — draggable + editable */}
+        <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+          <span>⠿</span> Drag sections to reorder how they appear in the PDF
+        </p>
+        <DraggableSections
+          orderedKeys={sectionOrder}
+          categoryConfig={categoryConfig}
+          data={data}
+          onUpdate={updateCategory}
+          onReorder={setSectionOrder}
+        />
 
         {/* Bottom actions */}
         <div className="mt-10 pb-12 flex flex-col sm:flex-row gap-4">
