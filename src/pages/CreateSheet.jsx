@@ -156,9 +156,10 @@ Remember: only include what was actually said. Never fill in gaps with assumed i
       },
     });
 
-    // Merge AI result with owner/sitter/pay meta
+    // Merge AI result with owner/sitter/pay meta (flatten in case result is nested under 'response')
+    const aiData = result?.response || result;
     const finalData = {
-      ...result,
+      ...aiData,
       _owner: { name: ownerName, phone: ownerPhone, email: ownerEmail },
       _sitter: { name: sitterName, phone: sitterPhone },
       _pay: payRate ? `$${payRate} ${payPeriod}` : '',

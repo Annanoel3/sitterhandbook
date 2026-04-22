@@ -46,7 +46,10 @@ export default function ReviewSheet() {
   };
 
   const updateCategory = async (key, value) => {
-    const updatedData = { ...sheet.organized_data, [key]: value };
+    const rawData = sheet.organized_data || {};
+    // Flatten nested response structure on first edit
+    const flat = { ...(rawData.response || rawData), _owner: rawData._owner, _sitter: rawData._sitter, _pay: rawData._pay };
+    const updatedData = { ...flat, [key]: value };
     await base44.entities.InstructionSheet.update(sheet.id, { organized_data: updatedData });
     setSheet(prev => ({ ...prev, organized_data: updatedData }));
   };
@@ -202,7 +205,9 @@ export default function ReviewSheet() {
     );
   }
 
-  const data = sheet.organized_data || {};
+  const rawData = sheet.organized_data || {};
+  // Support both flat structure and nested {response: {...}} structure
+  const data = { ...(rawData.response || rawData), _owner: rawData._owner, _sitter: rawData._sitter, _pay: rawData._pay };
   const owner = data._owner || {};
   const sitter = data._sitter || {};
   const pay = data._pay || '';
