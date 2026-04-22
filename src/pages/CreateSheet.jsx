@@ -94,18 +94,23 @@ export default function CreateSheet() {
     const result = await base44.integrations.Core.InvokeLLM({
       prompt: `You are an expert at organizing pet/house sitting instructions. Take the following rambled notes from a pet owner and organize them into a clear, comprehensive instruction sheet.
 
+CRITICAL RULES:
+1. NEVER invent, assume, or add any information that was not explicitly stated in the notes. If it wasn't said, do not include it.
+2. PRESERVE every specific detail, quantity, measurement, and instruction exactly as given — do not summarize or simplify. For example, if the owner says "split each pill pocket in half and put one pill in each half", write exactly that — do not simplify to "use pill pockets".
+3. Only include categories that have content directly from the notes.
+
 RAW NOTES:
 ${fullNotes}
 
 ${photoContext ? `PHOTO DESCRIPTIONS:\n${photoContext}` : ''}
 
-Organize into these categories (only include categories that have relevant info). For each category, write clear, easy-to-follow bullet points using "• " prefix:
+Organize into these categories (only include categories that have relevant info from the notes). For each category, write clear bullet points using "• " prefix that preserve ALL specific details:
 
 1. owner_contact - Owner's name, phone, email, trip destination, return date, emergency contacts, vet name/number
 2. house_access - Door codes, key locations, alarm systems, wifi password, parking, how to enter
 3. pets_overview - Names, breeds, ages, personalities of each pet
 4. feeding_schedule - What to feed each pet, when, how much, where food is stored, treats allowed
-5. medications - Any medications, dosages, times, how to administer
+5. medications - Any medications, dosages, times, how to administer (preserve every detail exactly)
 6. walking_exercise - Walk schedules, leash locations, favorite routes, exercise needs
 7. pet_quirks - Behavioral notes, fears, things to avoid, comfort items, sleeping spots
 8. plants_garden - Which plants, watering schedule, how much water, indoor vs outdoor
@@ -122,7 +127,7 @@ Return ONLY valid JSON with these exact keys (omit keys with no content):
   ...
 }
 
-Make it warm, clear, and thorough.`,
+Remember: only include what was actually said. Never fill in gaps with assumed information.`,
       response_json_schema: {
         type: 'object',
         properties: {
