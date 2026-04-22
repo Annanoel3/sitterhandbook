@@ -11,10 +11,10 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
   const recognitionRef = useRef(null);
   const isRecordingRef = useRef(false);
 
-  // Snapshot of existingText at the moment recording STARTS — never changes mid-session
+  // Frozen snapshot of text when recording starts
   const baseTextRef = useRef('');
-  // Only the new words spoken this session
-  const sessionTextRef = useRef('');
+  // Array of committed final transcript strings (one per final result event)
+  const finalChunksRef = useRef([]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -26,30 +26,31 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
-      let newFinal = '';
+      // On Android Chrome, resultIndex is always 0 — so we rebuild finals from scratch
+      // but deduplicate by only keeping the LAST full set of finals
+      const allFinals = [];
       let interim = '';
 
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
-          newFinal += event.results[i][0].transcript;
+          allFinals.push(event.results[i][0].transcript.trim());
         } else {
           interim += event.results[i][0].transcript;
         }
       }
 
-      if (newFinal) {
-        sessionTextRef.current += newFinal;
-        // Combine the frozen base + everything spoken this session
+      // Only update if we have more finals than before (new word confirmed)
+      if (allFinals.length > finalChunksRef.current.length) {
+        finalChunksRef.current = allFinals;
+        const sessionText = allFinals.join(' ');
         const combined = baseTextRef.current
-          ? baseTextRef.current.trimEnd() + ' ' + sessionTextRef.current.trim()
-          : sessionTextRef.current.trim();
-        onTranscript(combined);
+          ? baseTextRef.current.trimEnd() + ' ' + sessionText
+          : sessionText;
+        onTranscript(combined.trim());
         setInterimText('');
       }
 
-      if (interim) {
-        setInterimText(interim);
-      }
+      setInterimText(interim);
     };
 
     recognition.onerror = (event) => {
@@ -76,13 +77,14 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
 
   const startRecording = () => {
     if (!recognitionRef.current) return;
-    // Freeze the current text as the base — won't change during this session
     baseTextRef.current = existingText;
-    sessionTextRef.current = '';
+    finalChunksRef.current = [];
     isRecordingRef.current = true;
     setIsRecording(true);
     setInterimText('');
-    try { recognitionRef.current.start(); } catch (e) {
+    try {
+      recognitionRef.current.start();
+    } catch (e) {
       setTimeout(() => { try { recognitionRef.current.start(); } catch (e2) { /* ignore */ } }, 100);
     }
   };
