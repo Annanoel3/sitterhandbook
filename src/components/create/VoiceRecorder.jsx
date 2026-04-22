@@ -7,9 +7,16 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
   const [isRecording, setIsRecording] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
   const [interimText, setInterimText] = useState('');
+
   const recognitionRef = useRef(null);
-  const committedTextRef = useRef('');
   const isRecordingRef = useRef(false);
+  const existingTextRef = useRef(existingText);
+  const sessionFinalTextRef = useRef('');
+
+  // Keep existingTextRef in sync with prop
+  useEffect(() => {
+    existingTextRef.current = existingText;
+  }, [existingText]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -21,27 +28,36 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
+      // Collect only NEW final results since last restart
+      let newFinal = '';
       let interim = '';
-      // Rebuild committed text from all final results
-      let finalText = '';
-      for (let i = 0; i < event.results.length; i++) {
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
         if (event.results[i].isFinal) {
-          finalText += event.results[i][0].transcript + ' ';
+          newFinal += event.results[i][0].transcript;
         } else {
           interim += event.results[i][0].transcript;
         }
       }
-      if (finalText) {
-        committedTextRef.current = (existingText ? existingText.trimEnd() + ' ' : '') + finalText;
+
+      if (newFinal) {
+        sessionFinalTextRef.current += newFinal + ' ';
+        const base = existingTextRef.current ? existingTextRef.current.trimEnd() + ' ' : '';
+        onTranscript((base + sessionFinalTextRef.current).trim());
         setInterimText('');
-        onTranscript(committedTextRef.current.trim());
       }
-      if (interim) setInterimText(interim);
+
+      if (interim) {
+        setInterimText(interim);
+      }
     };
 
     recognition.onerror = (event) => {
       if (event.error === 'aborted') return;
-      if (event.error !== 'no-speech') { setIsRecording(false); isRecordingRef.current = false; }
+      if (event.error !== 'no-speech') {
+        setIsRecording(false);
+        isRecordingRef.current = false;
+      }
     };
 
     recognition.onend = () => {
@@ -51,12 +67,16 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
     };
 
     recognitionRef.current = recognition;
-    return () => { isRecordingRef.current = false; try { recognition.stop(); } catch (e) { /* ignore */ } };
-  }, []);
+
+    return () => {
+      isRecordingRef.current = false;
+      try { recognition.stop(); } catch (e) { /* ignore */ }
+    };
+  }, []); // Only run once — refs handle stale closure
 
   const startRecording = () => {
     if (!recognitionRef.current) return;
-    committedTextRef.current = '';
+    sessionFinalTextRef.current = '';
     isRecordingRef.current = true;
     setIsRecording(true);
     setInterimText('');
