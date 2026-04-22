@@ -92,6 +92,7 @@ export default function CreateSheet() {
       .join('\n');
 
     const result = await base44.integrations.Core.InvokeLLM({
+      model: "claude_sonnet_4_6",
       prompt: `You are an expert at organizing pet/house sitting instructions. Take the following rambled notes from a pet owner and organize them into a clear, comprehensive instruction sheet.
 
 CRITICAL RULES:
