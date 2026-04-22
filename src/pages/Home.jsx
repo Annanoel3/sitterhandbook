@@ -30,10 +30,10 @@ export default function Home() {
             <h1 className="font-heading text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-tight">
               Leave Perfect Instructions
               <br />
-              <span className="text-primary">for Your Pet Sitter</span>
+              <span className="text-primary">for Your Home Sitter</span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Just talk or type everything your sitter needs to know — feeding times, quirks, door codes, plant care, and more. We'll organize it into a beautiful PDF.
+              Just talk or type everything your sitter needs to know — feeding times, door codes, plant care, house rules, and more. We'll organize it into a beautiful PDF.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
               <Link to="/create">
@@ -73,7 +73,7 @@ export default function Home() {
 
       {/* Footer */}
       <div className="text-center py-10 text-sm text-muted-foreground border-t border-border/50">
-        Made with love for pet parents everywhere 🐾
+        Made with love for pet & home owners everywhere 🐾
       </div>
     </div>
   );
