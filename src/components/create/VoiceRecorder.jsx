@@ -1,106 +1,74 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff, Square, RotateCcw } from 'lucide-react';
+import { Mic, MicOff, Square, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
 
 export default function VoiceRecorder({ onTranscript, existingText = '' }) {
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
-  const [interimText, setInterimText] = useState('');
 
-  const recognitionRef = useRef(null);
-  const isRecordingRef = useRef(false);
+  const mediaRecorderRef = useRef(null);
+  const chunksRef = useRef([]);
 
-  // Frozen snapshot of text when recording starts
-  const baseTextRef = useRef('');
-  // Array of committed final transcript strings (one per final result event)
-  const finalChunksRef = useRef([]);
-
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) { setIsSupported(false); return; }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    recognition.onresult = (event) => {
-      // On Android Chrome, resultIndex is always 0 — so we rebuild finals from scratch
-      // but deduplicate by only keeping the LAST full set of finals
-      const allFinals = [];
-      let interim = '';
-
-      for (let i = 0; i < event.results.length; i++) {
-        if (event.results[i].isFinal) {
-          allFinals.push(event.results[i][0].transcript.trim());
-        } else {
-          interim += event.results[i][0].transcript;
-        }
-      }
-
-      // Only update if we have more finals than before (new word confirmed)
-      if (allFinals.length > finalChunksRef.current.length) {
-        finalChunksRef.current = allFinals;
-        const sessionText = allFinals.join(' ');
-        const combined = baseTextRef.current
-          ? baseTextRef.current.trimEnd() + ' ' + sessionText
-          : sessionText;
-        onTranscript(combined.trim());
-        setInterimText('');
-      }
-
-      setInterimText(interim);
-    };
-
-    recognition.onerror = (event) => {
-      if (event.error === 'aborted') return;
-      if (event.error !== 'no-speech') {
-        setIsRecording(false);
-        isRecordingRef.current = false;
-      }
-    };
-
-    recognition.onend = () => {
-      if (isRecordingRef.current) {
-        try { recognition.start(); } catch (e) { /* ignore */ }
-      }
-    };
-
-    recognitionRef.current = recognition;
-
-    return () => {
-      isRecordingRef.current = false;
-      try { recognition.stop(); } catch (e) { /* ignore */ }
-    };
-  }, []);
-
-  const startRecording = () => {
-    if (!recognitionRef.current) return;
-    baseTextRef.current = existingText;
-    finalChunksRef.current = [];
-    isRecordingRef.current = true;
-    setIsRecording(true);
-    setInterimText('');
+  const startRecording = async () => {
+    let stream;
     try {
-      recognitionRef.current.start();
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (e) {
-      setTimeout(() => { try { recognitionRef.current.start(); } catch (e2) { /* ignore */ } }, 100);
+      setIsSupported(false);
+      return;
     }
+
+    chunksRef.current = [];
+    const mediaRecorder = new MediaRecorder(stream);
+    mediaRecorderRef.current = mediaRecorder;
+
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      setIsProcessing(true);
+
+      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const file = new File([blob], 'recording.webm', { type: 'audio/webm' });
+
+      // Upload audio file
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+      // Transcribe via Whisper backend
+      const response = await base44.functions.invoke('transcribeAudio', { audio_url: file_url });
+      const transcript = response.data?.transcript || '';
+
+      if (transcript) {
+        const combined = existingText
+          ? existingText.trimEnd() + ' ' + transcript
+          : transcript;
+        onTranscript(combined.trim());
+      }
+
+      setIsProcessing(false);
+    };
+
+    mediaRecorder.start();
+    setIsRecording(true);
   };
 
   const stopRecording = () => {
-    isRecordingRef.current = false;
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+    }
     setIsRecording(false);
-    setInterimText('');
-    try { recognitionRef.current.stop(); } catch (e) { /* ignore */ }
   };
 
   if (!isSupported) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted rounded-xl px-4 py-3">
         <MicOff className="w-4 h-4" />
-        Voice recording not supported in this browser. Please type instead.
+        Microphone access not available. Please allow microphone permissions and try again.
       </div>
     );
   }
@@ -123,36 +91,36 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
             type="button"
             size="lg"
             onClick={isRecording ? stopRecording : startRecording}
+            disabled={isProcessing}
             className={`relative z-10 rounded-full w-14 h-14 p-0 shadow-lg transition-all ${
               isRecording
                 ? 'bg-destructive hover:bg-destructive/90 shadow-destructive/30'
                 : 'bg-primary hover:bg-primary/90 shadow-primary/30'
             }`}
           >
-            {isRecording ? <Square className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            {isProcessing ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : isRecording ? (
+              <Square className="w-5 h-5" />
+            ) : (
+              <Mic className="w-5 h-5" />
+            )}
           </Button>
         </div>
         <div className="text-sm space-y-0.5">
-          {isRecording ? (
-            <p className="text-destructive font-medium animate-pulse">● Recording... tap to pause</p>
+          {isProcessing ? (
+            <p className="text-primary font-medium animate-pulse">Transcribing your audio...</p>
+          ) : isRecording ? (
+            <p className="text-destructive font-medium animate-pulse">● Recording... tap to stop</p>
           ) : (
             <p className="text-muted-foreground">
-              {existingText ? (
-                <span className="flex items-center gap-1.5">
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  Tap to continue speaking — will append to your notes
-                </span>
-              ) : 'Tap to start talking — just speak naturally!'}
+              {existingText
+                ? 'Tap to record more — will append to your notes'
+                : 'Tap to start recording — speak naturally!'}
             </p>
           )}
         </div>
       </div>
-
-      {isRecording && interimText && (
-        <div className="ml-1 text-sm text-muted-foreground italic bg-muted/50 rounded-lg px-3 py-2 border border-border/50">
-          <span className="opacity-60">Hearing: </span>{interimText}
-        </div>
-      )}
     </div>
   );
 }
