@@ -39,8 +39,9 @@ export default function ReviewSheet() {
   }, [sheetId]);
 
   const loadSheet = async () => {
-    const sheets = await base44.entities.InstructionSheet.filter({ id: sheetId });
-    if (sheets.length > 0) setSheet(sheets[0]);
+    const results = await base44.entities.InstructionSheet.list();
+    const found = results.find(s => s.id === sheetId);
+    if (found) setSheet(found);
     setLoading(false);
   };
 
