@@ -98,8 +98,10 @@ CRITICAL RULES:
 1. NEVER invent, assume, or add ANY information not explicitly stated in the notes. No assumptions, no "likely", no "probably", no filling gaps. If it wasn't said, it does not exist.
 2. NEVER add negative statements about things not mentioned (e.g. do NOT write "no need to deal with mail" or "no other instructions" — simply omit that topic entirely).
 3. NEVER use placeholder text like "unspecified", "unknown", "not mentioned", or "N/A" — if a detail wasn't given, leave it out entirely.
-4. PRESERVE every specific detail exactly as stated, including quantities, measurements, and step-by-step instructions. If something applies to multiple pets, include it for ALL the pets it was mentioned for.
-5. Only include categories that have explicit content from the notes.
+4. COMPLETENESS IS THE MOST IMPORTANT THING. Your job is to be a faithful transcriber, not an editor. Include EVERY detail, no matter how small — exact amounts, times, brand names, specific steps, textures, temperatures, locations, habits, quirks, anything mentioned. If the owner says something step-by-step, write it step-by-step.
+5. If something applies to multiple pets, write it out for EACH pet it applies to. Do not collapse shared instructions into one vague line.
+6. Do not paraphrase or summarize. Use the owner's own words and phrasing wherever possible.
+7. Only include categories that have explicit content from the notes.
 
 RAW NOTES:
 ${fullNotes}
