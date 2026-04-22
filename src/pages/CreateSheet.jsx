@@ -101,7 +101,10 @@ CRITICAL RULES:
 4. COMPLETENESS IS THE MOST IMPORTANT THING. Your job is to be a faithful transcriber, not an editor. Include EVERY detail, no matter how small — exact amounts, times, brand names, specific steps, textures, temperatures, locations, habits, quirks, anything mentioned. If the owner says something step-by-step, write it step-by-step.
 5. If something applies to multiple pets, write it out for EACH pet it applies to. Do not collapse shared instructions into one vague line.
 6. Do not paraphrase or summarize. Use the owner's own words and phrasing wherever possible.
-7. Only include categories that have explicit content from the notes.
+7. NEVER assign a specific age to a specific pet unless the owner explicitly said which pet is which age. If they said "they are 8 and 9", write "8 and 9 years old" without assigning which age to which pet.
+8. NEVER write "breed unspecified", "unknown breed", or any similar placeholder. If a breed was not mentioned, simply do not mention breed at all for that pet.
+9. List EVERY pet mentioned in the notes. Do not skip any animal even if fewer details were given about them.
+10. Only include categories that have explicit content from the notes.
 
 RAW NOTES:
 ${fullNotes}
