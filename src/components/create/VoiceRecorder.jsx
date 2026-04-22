@@ -10,13 +10,11 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
 
   const recognitionRef = useRef(null);
   const isRecordingRef = useRef(false);
-  const existingTextRef = useRef(existingText);
-  const sessionFinalTextRef = useRef('');
 
-  // Keep existingTextRef in sync with prop
-  useEffect(() => {
-    existingTextRef.current = existingText;
-  }, [existingText]);
+  // Snapshot of existingText at the moment recording STARTS — never changes mid-session
+  const baseTextRef = useRef('');
+  // Only the new words spoken this session
+  const sessionTextRef = useRef('');
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -28,7 +26,6 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
     recognition.lang = 'en-US';
 
     recognition.onresult = (event) => {
-      // Collect only NEW final results since last restart
       let newFinal = '';
       let interim = '';
 
@@ -41,9 +38,12 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
       }
 
       if (newFinal) {
-        sessionFinalTextRef.current += newFinal + ' ';
-        const base = existingTextRef.current ? existingTextRef.current.trimEnd() + ' ' : '';
-        onTranscript((base + sessionFinalTextRef.current).trim());
+        sessionTextRef.current += newFinal;
+        // Combine the frozen base + everything spoken this session
+        const combined = baseTextRef.current
+          ? baseTextRef.current.trimEnd() + ' ' + sessionTextRef.current.trim()
+          : sessionTextRef.current.trim();
+        onTranscript(combined);
         setInterimText('');
       }
 
@@ -72,11 +72,13 @@ export default function VoiceRecorder({ onTranscript, existingText = '' }) {
       isRecordingRef.current = false;
       try { recognition.stop(); } catch (e) { /* ignore */ }
     };
-  }, []); // Only run once — refs handle stale closure
+  }, []);
 
   const startRecording = () => {
     if (!recognitionRef.current) return;
-    sessionFinalTextRef.current = '';
+    // Freeze the current text as the base — won't change during this session
+    baseTextRef.current = existingText;
+    sessionTextRef.current = '';
     isRecordingRef.current = true;
     setIsRecording(true);
     setInterimText('');
