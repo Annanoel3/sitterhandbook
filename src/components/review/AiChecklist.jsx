@@ -24,9 +24,10 @@ Original notes: ${rawText || '(not available)'}
 Review these instructions carefully and identify any IMPORTANT missing details that a pet sitter would genuinely need. Focus on things that could cause problems if missing. Be specific and friendly.
 
 Examples of gaps to look for:
+- Pets mentioned but breed not stated
 - Pets mentioned but no feeding times or amounts given
-- Feeding times given but no food location mentioned  
-- Medications mentioned but no dosage or schedule
+- Feeding instructions that mention multiple pets but only detail one of them
+- Medications mentioned but no dosage, schedule, or exact administration method
 - Dog mentioned but no walk frequency
 - Fish mentioned but no feeding schedule
 - House access mentioned but no alarm code or wifi

@@ -95,9 +95,11 @@ export default function CreateSheet() {
       prompt: `You are an expert at organizing pet/house sitting instructions. Take the following rambled notes from a pet owner and organize them into a clear, comprehensive instruction sheet.
 
 CRITICAL RULES:
-1. NEVER invent, assume, or add any information that was not explicitly stated in the notes. If it wasn't said, do not include it.
-2. PRESERVE every specific detail, quantity, measurement, and instruction exactly as given — do not summarize or simplify. For example, if the owner says "split each pill pocket in half and put one pill in each half", write exactly that — do not simplify to "use pill pockets".
-3. Only include categories that have content directly from the notes.
+1. NEVER invent, assume, or add ANY information not explicitly stated in the notes. No assumptions, no "likely", no "probably", no filling gaps. If it wasn't said, it does not exist.
+2. NEVER add negative statements about things not mentioned (e.g. do NOT write "no need to deal with mail" or "no other instructions" — simply omit that topic entirely).
+3. NEVER use placeholder text like "unspecified", "unknown", "not mentioned", or "N/A" — if a detail wasn't given, leave it out entirely.
+4. PRESERVE every specific detail exactly as stated, including quantities, measurements, and step-by-step instructions. If something applies to multiple pets, include it for ALL the pets it was mentioned for.
+5. Only include categories that have explicit content from the notes.
 
 RAW NOTES:
 ${fullNotes}
