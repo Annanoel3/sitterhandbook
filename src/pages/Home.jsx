@@ -30,7 +30,7 @@ export default function Home() {
             <h1 className="font-heading text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-tight">
               Leave Perfect Instructions
               <br />
-              <span className="text-primary">for Your Home Sitter</span>
+              <span className="text-primary">for Your Sitter</span>
             </h1>
             <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
               Just talk or type everything your sitter needs to know — feeding times, door codes, plant care, house rules, and more. We'll organize it into a beautiful PDF.
