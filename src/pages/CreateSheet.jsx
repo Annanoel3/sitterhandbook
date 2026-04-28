@@ -128,40 +128,19 @@ Organize into these categories (only include categories that have relevant info 
 12. emergency_info - Emergency vet address/phone, nearest animal hospital, poison control (888-426-4435), what to do if pet is sick
 13. additional_notes - Anything else the sitter should know
 
-Return ONLY valid JSON with these exact keys (omit keys with no content):
-{
-  "owner_contact": "bullet points...",
-  "house_access": "bullet points...",
-  ...
-}
+Return ONLY a valid JSON object (no markdown, no code fences) with these exact string keys (omit keys with no content):
+{"owner_contact":"...","house_access":"...",...}
 
 Remember: only include what was actually said. Never fill in gaps with assumed information.`,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          owner_contact: { type: 'string' },
-          house_access: { type: 'string' },
-          pets_overview: { type: 'string' },
-          feeding_schedule: { type: 'string' },
-          medications: { type: 'string' },
-          walking_exercise: { type: 'string' },
-          pet_quirks: { type: 'string' },
-          plants_garden: { type: 'string' },
-          fish_aquarium: { type: 'string' },
-          other_pets: { type: 'string' },
-          house_rules: { type: 'string' },
-          emergency_info: { type: 'string' },
-          additional_notes: { type: 'string' },
-        },
-      },
     });
 
-    // The SDK may return { response: "json string" } or { response: {...} } or the object directly
-    let aiData = result;
-    if (aiData?.response !== undefined) aiData = aiData.response;
-    if (typeof aiData === 'string') {
-      try { aiData = JSON.parse(aiData); } catch { aiData = {}; }
-    }
+    // Unwrap all possible SDK response shapes, then parse
+    let rawStr = result;
+    if (rawStr && typeof rawStr === 'object' && rawStr.response !== undefined) rawStr = rawStr.response;
+    if (typeof rawStr !== 'string') rawStr = JSON.stringify(rawStr);
+    rawStr = rawStr.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+    let aiData = {};
+    try { aiData = JSON.parse(rawStr); } catch { aiData = {}; }
 
     const finalData = {
       ...aiData,

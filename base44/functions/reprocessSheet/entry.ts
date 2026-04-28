@@ -13,24 +13,10 @@ Deno.serve(async (req) => {
     const sheet = sheets.find(s => s.id === sheet_id);
     if (!sheet) return Response.json({ error: 'Sheet not found' }, { status: 404 });
 
-    // Reconstruct meta from current organized_data if it's the char-indexed mess
     const rawMeta = sheet.organized_data || {};
-    let existingOwner = rawMeta._owner || {};
-    let existingSitter = rawMeta._sitter || {};
-    let existingPay = rawMeta._pay || '';
-
-    // If organized_data keys are numeric (char-by-char mess), reconstruct the JSON string
-    const keys = Object.keys(rawMeta);
-    const isCharIndexed = keys.length > 10 && keys.every(k => !isNaN(k));
-    if (isCharIndexed) {
-      const jsonStr = keys.sort((a, b) => Number(a) - Number(b)).map(k => rawMeta[k]).join('');
-      try {
-        const parsed = JSON.parse(jsonStr);
-        existingOwner = parsed._owner || parsed.owner || {};
-        existingSitter = parsed._sitter || parsed.sitter || {};
-        existingPay = parsed._pay || parsed.pay || '';
-      } catch {}
-    }
+    const existingOwner = rawMeta._owner || {};
+    const existingSitter = rawMeta._sitter || {};
+    const existingPay = rawMeta._pay || '';
 
     const photoContext = (sheet.photo_labels || [])
       .map((label, i) => {
@@ -40,6 +26,8 @@ Deno.serve(async (req) => {
       .filter(Boolean)
       .join('\n');
 
+    // Use InvokeLLM WITHOUT response_json_schema so we get a plain string back
+    // then parse it ourselves — avoids SDK wrapping issues
     const result = await base44.integrations.Core.InvokeLLM({
       model: "claude_sonnet_4_6",
       prompt: `You are an expert at organizing pet/house sitting instructions. Take the following rambled notes from a pet owner and organize them into a clear, comprehensive instruction sheet.
@@ -75,38 +63,30 @@ Organize into these categories (only include categories with relevant info). Use
 12. emergency_info - Emergency vet, poison control (888-426-4435), what to do if pet is sick
 13. additional_notes - Anything else the sitter should know
 
-Return ONLY valid JSON with these exact keys (omit keys with no content):
-{
-  "owner_contact": "bullet points...",
-  "house_access": "bullet points...",
-  ...
-}`,
-      response_json_schema: {
-        type: 'object',
-        properties: {
-          owner_contact: { type: 'string' },
-          house_access: { type: 'string' },
-          pets_overview: { type: 'string' },
-          feeding_schedule: { type: 'string' },
-          medications: { type: 'string' },
-          walking_exercise: { type: 'string' },
-          pet_quirks: { type: 'string' },
-          plants_garden: { type: 'string' },
-          fish_aquarium: { type: 'string' },
-          other_pets: { type: 'string' },
-          house_rules: { type: 'string' },
-          emergency_info: { type: 'string' },
-          additional_notes: { type: 'string' },
-        },
-      },
+Return ONLY a valid JSON object (no markdown, no code fences) with these exact string keys (omit keys with no content):
+{"owner_contact":"...","house_access":"...","pets_overview":"...",...}`,
     });
 
-    // The SDK may return { response: "json string" } or { response: {...} } or the object directly
-    let aiData = result;
-    if (aiData?.response !== undefined) aiData = aiData.response;
-    if (typeof aiData === 'string') {
-      try { aiData = JSON.parse(aiData); } catch { aiData = {}; }
+    console.log('LLM raw result type:', typeof result);
+    console.log('LLM raw result (first 300):', JSON.stringify(result).slice(0, 300));
+
+    // Unwrap all possible SDK response shapes
+    let rawStr = result;
+    if (rawStr && typeof rawStr === 'object' && rawStr.response !== undefined) rawStr = rawStr.response;
+    if (typeof rawStr !== 'string') rawStr = JSON.stringify(rawStr);
+
+    // Strip markdown code fences if present
+    rawStr = rawStr.trim().replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+
+    let aiData = {};
+    try {
+      aiData = JSON.parse(rawStr);
+    } catch (e) {
+      console.error('JSON parse error:', e.message, 'raw:', rawStr.slice(0, 200));
+      return Response.json({ error: 'Failed to parse AI response', raw: rawStr.slice(0, 500) }, { status: 500 });
     }
+
+    console.log('Parsed aiData keys:', Object.keys(aiData));
 
     const finalData = {
       ...aiData,
