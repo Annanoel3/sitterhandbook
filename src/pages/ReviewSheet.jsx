@@ -324,9 +324,24 @@ export default function ReviewSheet() {
           </CardContent>
         </Card>
 
+        {/* AI Completeness Checker */}
+        <AiChecklist organizedData={data} rawText={sheet.raw_text} />
+
+        {/* Organized Sections — draggable + editable */}
+        <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+          <span>⠿</span> Drag sections to reorder how they appear in the PDF
+        </p>
+        <DraggableSections
+          orderedKeys={sectionOrder}
+          categoryConfig={categoryConfig}
+          data={data}
+          onUpdate={updateCategory}
+          onReorder={setSectionOrder}
+        />
+
         {/* Photos */}
         {sheet.photo_urls?.length > 0 && (
-          <div className="mb-8">
+          <div className="mt-10 mb-8">
             <h3 className="font-heading text-lg font-semibold mb-3">📸 Photo Reference Guide</h3>
             <div className="space-y-3">
               {sheet.photo_urls.map((url, i) => {
@@ -347,21 +362,6 @@ export default function ReviewSheet() {
             </div>
           </div>
         )}
-
-        {/* AI Completeness Checker */}
-        <AiChecklist organizedData={data} rawText={sheet.raw_text} />
-
-        {/* Organized Sections — draggable + editable */}
-        <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
-          <span>⠿</span> Drag sections to reorder how they appear in the PDF
-        </p>
-        <DraggableSections
-          orderedKeys={sectionOrder}
-          categoryConfig={categoryConfig}
-          data={data}
-          onUpdate={updateCategory}
-          onReorder={setSectionOrder}
-        />
 
         {/* Bottom actions */}
         <div className="mt-10 pb-12 flex flex-col sm:flex-row gap-4">
