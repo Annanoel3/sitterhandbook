@@ -212,12 +212,23 @@ export default function ReviewSheet() {
         const label = sheet.photo_labels?.[i] || `Photo ${i + 1}`;
         const caption = sheet.photo_captions?.[i] || '';
 
-        const imgHeight = 50;
-        const imgWidth = 60;
-        checkPage(imgHeight + 18);
+        const maxImgWidth = 60;
+        const maxImgHeight = 50;
 
         const dataUrl = await loadImageAsDataUrl(url);
         if (dataUrl) {
+          // Create a temp image to get natural dimensions for aspect ratio
+          const tempImg = new Image();
+          await new Promise(resolve => { tempImg.src = dataUrl; tempImg.onload = resolve; });
+          const ratio = tempImg.naturalWidth / tempImg.naturalHeight;
+          let imgWidth = maxImgWidth;
+          let imgHeight = imgWidth / ratio;
+          if (imgHeight > maxImgHeight) {
+            imgHeight = maxImgHeight;
+            imgWidth = imgHeight * ratio;
+          }
+
+          checkPage(imgHeight + 18);
           doc.addImage(dataUrl, 'JPEG', margin, y, imgWidth, imgHeight);
           const textX = margin + imgWidth + 5;
           const textMaxW = maxWidth - imgWidth - 5;
@@ -232,7 +243,7 @@ export default function ReviewSheet() {
             const capLines = doc.splitTextToSize(caption, textMaxW);
             capLines.forEach((line, li) => doc.text(line, textX, y + 16 + li * 5));
           }
-          y += imgHeight + 6;
+          y += Math.max(imgHeight, 20) + 6;
         } else {
           addText(`• ${label}`, 10, true, [50, 50, 50]);
           if (caption) addText(`  ${caption}`, 9, false, [90, 90, 90]);
