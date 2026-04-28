@@ -51,11 +51,11 @@ Organize into these categories (only include categories with relevant info). Use
 
 1. owner_contact - Owner name, phone, email, trip destination, return date, emergency contacts, vet
 2. house_access - Door codes, key locations, alarm, wifi, parking
-3. pets_overview - Names, breeds, ages, personalities
+3. pets_overview - Names, breeds, ages ONLY. Keep brief — one or two lines per pet. Do NOT include personality, behaviors, commands, quirks, or training info here (those go in pet_quirks).
 4. feeding_schedule - What, when, how much, where stored, treats
 5. medications - Medications, dosages, times, how to administer
 6. walking_exercise - Walk schedules, leash locations, exercise needs
-7. pet_quirks - Behavioral notes, fears, things to avoid, comfort items
+7. pet_quirks - ALL personality details, behavioral notes, commands they know, fears, things to avoid, comfort items, sleeping spots, training notes. This is the in-depth section — do not duplicate anything already in pets_overview.
 8. plants_garden - Which plants, watering schedule
 9. fish_aquarium - Feeding schedule, tank care
 10. other_pets - Other animals and their care
