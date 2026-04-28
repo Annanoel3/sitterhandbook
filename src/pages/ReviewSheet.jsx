@@ -46,12 +46,27 @@ export default function ReviewSheet() {
   };
 
   const updateCategory = async (key, value) => {
-    const rawData = sheet.organized_data || {};
-    // Flatten nested response structure on first edit
-    const flat = { ...(rawData.response || rawData), _owner: rawData._owner, _sitter: rawData._sitter, _pay: rawData._pay };
-    const updatedData = { ...flat, [key]: value };
+    // Always save as flat structure
+    const updatedData = { ...data, [key]: value };
     await base44.entities.InstructionSheet.update(sheet.id, { organized_data: updatedData });
     setSheet(prev => ({ ...prev, organized_data: updatedData }));
+  };
+
+  const loadImageAsDataUrl = (url) => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        resolve(canvas.toDataURL('image/jpeg', 0.85));
+      };
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
   };
 
   const handleDownloadPDF = async () => {
@@ -69,11 +84,11 @@ export default function ReviewSheet() {
       if (y + needed > 280) { doc.addPage(); y = 15; }
     };
 
-    const addText = (text, fontSize, isBold, color, xOverride) => {
+    const addText = (txt, fontSize, isBold, color, xOverride) => {
       doc.setFontSize(fontSize);
       doc.setFont('helvetica', isBold ? 'bold' : 'normal');
       doc.setTextColor(...(color || [40, 40, 40]));
-      const lines = doc.splitTextToSize(String(text), maxWidth);
+      const lines = doc.splitTextToSize(String(txt), maxWidth);
       lines.forEach(line => {
         checkPage(fontSize * 0.45 + 1);
         doc.text(line, xOverride !== undefined ? xOverride : margin, y);
@@ -83,16 +98,14 @@ export default function ReviewSheet() {
 
     const addSpacing = (n) => { y += n; };
 
-    const data = sheet.organized_data || {};
+    // Use the already-flattened data from render scope
     const owner = data._owner || {};
     const sitter = data._sitter || {};
-    const pay = data._pay || '';
 
     // ── HEADER BANNER ──
     doc.setFillColor(46, 125, 87);
     doc.rect(0, 0, pageWidth, 38, 'F');
 
-    // Owner corner (left)
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(255, 255, 255);
@@ -103,7 +116,6 @@ export default function ReviewSheet() {
     if (owner.phone) doc.text(owner.phone, margin, 22);
     if (owner.email) doc.text(owner.email, margin, 28);
 
-    // Pet Sitter corner (right)
     const rightX = pageWidth - margin;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
@@ -114,7 +126,6 @@ export default function ReviewSheet() {
     if (sitter.name) doc.text(sitter.name, rightX, 16, { align: 'right' });
     if (sitter.phone) doc.text(sitter.phone, rightX, 22, { align: 'right' });
 
-    // Center title
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(16);
     doc.setTextColor(255, 255, 255);
@@ -122,9 +133,8 @@ export default function ReviewSheet() {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(200, 240, 220);
-    doc.text(`Prepared with love 🐾  •  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, 26, { align: 'center' });
+    doc.text(`Prepared with love  •  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, 26, { align: 'center' });
 
-    // Pay rate badge
     if (pay) {
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(pageWidth / 2 - 28, 30, 56, 7, 2, 2, 'F');
@@ -136,14 +146,11 @@ export default function ReviewSheet() {
 
     y = 46;
 
-    // ── SECTIONS — respect user's drag order ──
-    const orderedKeys = sectionOrder;
-    for (const key of orderedKeys) {
-      if (data[key]) {
+    // ── SECTIONS ──
+    for (const key of sectionOrder) {
+      if (data[key] && typeof data[key] === 'string') {
         checkPage(18);
         const config = categoryConfig[key];
-
-        // Section header bg
         doc.setFillColor(240, 250, 244);
         doc.roundedRect(margin - 3, y - 4, maxWidth + 6, 9, 1.5, 1.5, 'F');
         doc.setFontSize(10);
@@ -165,7 +172,7 @@ export default function ReviewSheet() {
       }
     }
 
-    // Photo references with captions
+    // ── PHOTOS with actual images ──
     if (sheet.photo_urls?.length) {
       checkPage(18);
       doc.setFillColor(240, 250, 244);
@@ -174,17 +181,60 @@ export default function ReviewSheet() {
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(46, 125, 87);
       doc.text('PHOTO REFERENCE GUIDE', margin, y + 2);
-      y += 8;
-      sheet.photo_urls.forEach((url, i) => {
+      y += 10;
+
+      for (let i = 0; i < sheet.photo_urls.length; i++) {
+        const url = sheet.photo_urls[i];
         const label = sheet.photo_labels?.[i] || `Photo ${i + 1}`;
         const caption = sheet.photo_captions?.[i] || '';
-        addText(`• ${label}`, 10, true, [50, 50, 50]);
-        if (caption) addText(`  ${caption}`, 9, false, [90, 90, 90]);
-        addSpacing(1);
-      });
+
+        const imgHeight = 50;
+        const imgWidth = 60;
+        checkPage(imgHeight + 18);
+
+        // Try to embed the actual image
+        const dataUrl = await loadImageAsDataUrl(url);
+        if (dataUrl) {
+          doc.addImage(dataUrl, 'JPEG', margin, y, imgWidth, imgHeight);
+          // Label + caption to the right of image
+          const textX = margin + imgWidth + 5;
+          const textMaxW = maxWidth - imgWidth - 5;
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(40, 40, 40);
+          const labelLines = doc.splitTextToSize(label, textMaxW);
+          labelLines.forEach(line => { doc.text(line, textX, y + 8); y += 0; });
+          doc.text(label, textX, y + 8);
+          if (caption) {
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.setTextColor(90, 90, 90);
+            const capLines = doc.splitTextToSize(caption, textMaxW);
+            capLines.forEach((line, li) => doc.text(line, textX, y + 16 + li * 5));
+          }
+          y += imgHeight + 6;
+        } else {
+          // Fallback: text only
+          addText(`• ${label}`, 10, true, [50, 50, 50]);
+          if (caption) addText(`  ${caption}`, 9, false, [90, 90, 90]);
+        }
+        addSpacing(3);
+      }
     }
 
-    doc.save(`${(sheet.title || 'pet-sitter-instructions').replace(/\s+/g, '-').toLowerCase()}.pdf`);
+    const fileName = `${(sheet.title || 'pet-sitter-instructions').replace(/\s+/g, '-').toLowerCase()}.pdf`;
+
+    // Save a copy of the PDF as a file and store the URL
+    const pdfBlob = doc.output('blob');
+    const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
+    base44.integrations.Core.UploadFile({ file: pdfFile }).then(({ file_url }) => {
+      base44.entities.InstructionSheet.update(sheet.id, {
+        last_pdf_url: file_url,
+        last_pdf_generated: new Date().toISOString(),
+      });
+    });
+
+    doc.save(fileName);
     setGenerating(false);
   };
 
@@ -206,8 +256,15 @@ export default function ReviewSheet() {
   }
 
   const rawData = sheet.organized_data || {};
-  // Support both flat structure and nested {response: {...}} structure
-  const data = { ...(rawData.response || rawData), _owner: rawData._owner, _sitter: rawData._sitter, _pay: rawData._pay };
+  // Handle: flat, nested {response: obj}, or {response: "json string"}
+  let resolvedData = rawData;
+  if (rawData.response !== undefined) {
+    resolvedData = rawData.response;
+    if (typeof resolvedData === 'string') {
+      try { resolvedData = JSON.parse(resolvedData); } catch { resolvedData = {}; }
+    }
+  }
+  const data = { ...resolvedData, _owner: rawData._owner, _sitter: rawData._sitter, _pay: rawData._pay };
   const owner = data._owner || {};
   const sitter = data._sitter || {};
   const pay = data._pay || '';

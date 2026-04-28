@@ -156,8 +156,13 @@ Remember: only include what was actually said. Never fill in gaps with assumed i
       },
     });
 
-    // Merge AI result with owner/sitter/pay meta (flatten in case result is nested under 'response')
-    const aiData = result?.response || result;
+    // The SDK may return { response: "json string" } or { response: {...} } or the object directly
+    let aiData = result;
+    if (aiData?.response !== undefined) aiData = aiData.response;
+    if (typeof aiData === 'string') {
+      try { aiData = JSON.parse(aiData); } catch { aiData = {}; }
+    }
+
     const finalData = {
       ...aiData,
       _owner: { name: ownerName, phone: ownerPhone, email: ownerEmail },
