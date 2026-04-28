@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 import AiChecklist from '../components/review/AiChecklist';
 import DraggableSections from '../components/review/DraggableSections';
 
-const categoryConfig = {
+export const categoryConfig = {
   owner_contact: { icon: Phone, title: 'Owner Contact Info', color: 'bg-primary/10 text-primary' },
   house_access: { icon: Home, title: 'House Access & Entry', color: 'bg-accent/20 text-accent-foreground' },
   pets_overview: { icon: PawPrint, title: 'Meet the Pets', color: 'bg-primary/10 text-primary' },
@@ -24,11 +24,32 @@ const categoryConfig = {
   additional_notes: { icon: StickyNote, title: 'Additional Notes', color: 'bg-accent/20 text-accent-foreground' },
 };
 
+const SECTION_KEYS = Object.keys(categoryConfig);
+
+function flattenOrganizedData(raw) {
+  if (!raw) return {};
+  let resolved = raw;
+  if (raw.response !== undefined) {
+    resolved = raw.response;
+    if (typeof resolved === 'string') {
+      try { resolved = JSON.parse(resolved); } catch { resolved = {}; }
+    }
+  }
+  return {
+    ...resolved,
+    _owner: raw._owner || resolved._owner,
+    _sitter: raw._sitter || resolved._sitter,
+    _pay: raw._pay || resolved._pay,
+  };
+}
+
 export default function ReviewSheet() {
   const [sheet, setSheet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
-  const [sectionOrder, setSectionOrder] = useState(Object.keys(categoryConfig));
+  const [sectionOrder, setSectionOrder] = useState(SECTION_KEYS);
+  // data is the canonical flat organized_data we show and edit
+  const [data, setData] = useState({});
 
   const urlParams = new URLSearchParams(window.location.search);
   const sheetId = urlParams.get('id');
@@ -41,15 +62,17 @@ export default function ReviewSheet() {
   const loadSheet = async () => {
     const results = await base44.entities.InstructionSheet.list();
     const found = results.find(s => s.id === sheetId);
-    if (found) setSheet(found);
+    if (found) {
+      setSheet(found);
+      setData(flattenOrganizedData(found.organized_data));
+    }
     setLoading(false);
   };
 
   const updateCategory = async (key, value) => {
-    // Always save as flat structure
     const updatedData = { ...data, [key]: value };
-    await base44.entities.InstructionSheet.update(sheet.id, { organized_data: updatedData });
-    setSheet(prev => ({ ...prev, organized_data: updatedData }));
+    setData(updatedData);
+    await base44.entities.InstructionSheet.update(sheetId, { organized_data: updatedData });
   };
 
   const loadImageAsDataUrl = (url) => {
@@ -98,9 +121,9 @@ export default function ReviewSheet() {
 
     const addSpacing = (n) => { y += n; };
 
-    // Use the already-flattened data from render scope
     const owner = data._owner || {};
     const sitter = data._sitter || {};
+    const pay = data._pay || '';
 
     // ── HEADER BANNER ──
     doc.setFillColor(46, 125, 87);
@@ -172,7 +195,7 @@ export default function ReviewSheet() {
       }
     }
 
-    // ── PHOTOS with actual images ──
+    // ── PHOTOS ──
     if (sheet.photo_urls?.length) {
       checkPage(18);
       doc.setFillColor(240, 250, 244);
@@ -192,18 +215,14 @@ export default function ReviewSheet() {
         const imgWidth = 60;
         checkPage(imgHeight + 18);
 
-        // Try to embed the actual image
         const dataUrl = await loadImageAsDataUrl(url);
         if (dataUrl) {
           doc.addImage(dataUrl, 'JPEG', margin, y, imgWidth, imgHeight);
-          // Label + caption to the right of image
           const textX = margin + imgWidth + 5;
           const textMaxW = maxWidth - imgWidth - 5;
           doc.setFontSize(10);
           doc.setFont('helvetica', 'bold');
           doc.setTextColor(40, 40, 40);
-          const labelLines = doc.splitTextToSize(label, textMaxW);
-          labelLines.forEach(line => { doc.text(line, textX, y + 8); y += 0; });
           doc.text(label, textX, y + 8);
           if (caption) {
             doc.setFont('helvetica', 'normal');
@@ -214,7 +233,6 @@ export default function ReviewSheet() {
           }
           y += imgHeight + 6;
         } else {
-          // Fallback: text only
           addText(`• ${label}`, 10, true, [50, 50, 50]);
           if (caption) addText(`  ${caption}`, 9, false, [90, 90, 90]);
         }
@@ -223,17 +241,6 @@ export default function ReviewSheet() {
     }
 
     const fileName = `${(sheet.title || 'pet-sitter-instructions').replace(/\s+/g, '-').toLowerCase()}.pdf`;
-
-    // Save a copy of the PDF as a file and store the URL
-    const pdfBlob = doc.output('blob');
-    const pdfFile = new File([pdfBlob], fileName, { type: 'application/pdf' });
-    base44.integrations.Core.UploadFile({ file: pdfFile }).then(({ file_url }) => {
-      base44.entities.InstructionSheet.update(sheet.id, {
-        last_pdf_url: file_url,
-        last_pdf_generated: new Date().toISOString(),
-      });
-    });
-
     doc.save(fileName);
     setGenerating(false);
   };
@@ -255,16 +262,6 @@ export default function ReviewSheet() {
     );
   }
 
-  const rawData = sheet.organized_data || {};
-  // Handle: flat, nested {response: obj}, or {response: "json string"}
-  let resolvedData = rawData;
-  if (rawData.response !== undefined) {
-    resolvedData = rawData.response;
-    if (typeof resolvedData === 'string') {
-      try { resolvedData = JSON.parse(resolvedData); } catch { resolvedData = {}; }
-    }
-  }
-  const data = { ...resolvedData, _owner: rawData._owner, _sitter: rawData._sitter, _pay: rawData._pay };
   const owner = data._owner || {};
   const sitter = data._sitter || {};
   const pay = data._pay || '';
@@ -327,7 +324,7 @@ export default function ReviewSheet() {
           </CardContent>
         </Card>
 
-        {/* Photos with labels + captions */}
+        {/* Photos */}
         {sheet.photo_urls?.length > 0 && (
           <div className="mb-8">
             <h3 className="font-heading text-lg font-semibold mb-3">📸 Photo Reference Guide</h3>
