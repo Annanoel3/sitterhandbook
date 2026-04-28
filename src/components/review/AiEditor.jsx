@@ -111,7 +111,7 @@ Return ONLY a valid JSON object (no markdown, no code fences) with the same sect
         variant="outline"
       >
         <Wand2 className="w-4 h-4" />
-        Edit with AI
+        Edit
       </Button>
 
       {/* Modal */}
