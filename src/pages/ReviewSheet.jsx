@@ -7,6 +7,7 @@ import { Loader2, Download, ArrowLeft, Phone, Home, PawPrint, UtensilsCrossed, P
 import { motion } from 'framer-motion';
 import AiChecklist from '../components/review/AiChecklist';
 import DraggableSections from '../components/review/DraggableSections';
+import AiEditor from '../components/review/AiEditor';
 
 export const categoryConfig = {
   owner_contact: { icon: Phone, title: 'Owner Contact Info', color: 'bg-primary/10 text-primary' },
@@ -279,10 +280,13 @@ export default function ReviewSheet() {
               <h1 className="font-heading text-3xl font-bold">{sheet.title}</h1>
               <p className="text-muted-foreground mt-1">Review and edit each section, then download your PDF</p>
             </div>
-            <Button size="lg" onClick={handleDownloadPDF} disabled={generating} className="rounded-xl shadow-lg shadow-primary/20 shrink-0">
-              {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-              Download PDF
-            </Button>
+            <div className="flex items-center gap-3 shrink-0">
+              <AiEditor sheetId={sheetId} data={data} onUpdated={setData} />
+              <Button size="lg" onClick={handleDownloadPDF} disabled={generating} className="rounded-xl shadow-lg shadow-primary/20">
+                {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+                Download PDF
+              </Button>
+            </div>
           </div>
         </motion.div>
 
