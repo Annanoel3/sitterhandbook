@@ -12,6 +12,7 @@ import ReviewSheet from './pages/ReviewSheet';
 import MySheets from './pages/MySheets';
 import Settings from './pages/Settings';
 import AppLayout from './components/layout/AppLayout';
+import ExampleSheet from './pages/ExampleSheet';
 
 const RedirectToLogin = () => {
   const { navigateToLogin } = useAuth();
@@ -43,6 +44,7 @@ const AuthenticatedApp = () => {
               <Route path="/" element={<Home />} />
               <Route path="/create" element={<CreateSheet />} />
               <Route path="/review" element={<ReviewSheet />} />
+              <Route path="/example" element={<ExampleSheet />} />
               <Route path="*" element={<RedirectToLogin />} />
             </Route>
           </Routes>
@@ -57,6 +59,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Home />} />
         <Route path="/create" element={<CreateSheet />} />
         <Route path="/review" element={<ReviewSheet />} />
+        <Route path="/example" element={<ExampleSheet />} />
         <Route path="/sheets" element={<MySheets />} />
         <Route path="/settings" element={<Settings />} />
       </Route>

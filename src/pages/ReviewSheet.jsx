@@ -199,6 +199,58 @@ export default function ReviewSheet() {
 
     y = 46;
 
+    // Extract pet names from pets_overview for auto-bolding
+    const petNames = [];
+    if (data.pets_overview) {
+      const lines = data.pets_overview.split('\n');
+      for (const line of lines) {
+        const clean = line.replace(/^•\s*/, '').replace(/\*\*/g, '').trim();
+        const nameMatch = clean.match(/^([A-Z][a-z]+)/);
+        if (nameMatch) petNames.push(nameMatch[1]);
+      }
+    }
+
+    // Render a line with **bold** markdown and auto-bolded pet names, returning x offset
+    const renderRichLine = (rawLine, fontSize, baseColor) => {
+      // First, auto-bold pet names that aren't already bolded
+      let processed = rawLine;
+      for (const name of petNames) {
+        // Only bold if not already wrapped in **
+        const regex = new RegExp(`(?<!\\*\\*)\\b(${name})\\b(?!\\*\\*)`, 'g');
+        processed = processed.replace(regex, `**$1**`);
+      }
+
+      // Split into bold/normal segments
+      const segments = processed.split(/(\*\*[^*]+\*\*)/g);
+      let xCursor = margin;
+      doc.setFontSize(fontSize);
+      doc.setTextColor(...baseColor);
+
+      for (const seg of segments) {
+        if (seg.startsWith('**') && seg.endsWith('**') && seg.length > 4) {
+          const word = seg.slice(2, -2);
+          doc.setFont('helvetica', 'bold');
+          doc.text(word, xCursor, y);
+          xCursor += doc.getTextWidth(word);
+        } else if (seg) {
+          doc.setFont('helvetica', 'normal');
+          // Word-wrap long normal segments
+          const words = seg.split(' ');
+          for (const word of words) {
+            const w = doc.getTextWidth(word + ' ');
+            if (xCursor + w > margin + maxWidth) {
+              y += fontSize * 0.42;
+              checkPage(fontSize * 0.42 + 1);
+              xCursor = margin;
+            }
+            doc.text(word + ' ', xCursor, y);
+            xCursor += w;
+          }
+        }
+      }
+      y += fontSize * 0.42;
+    };
+
     // ── SECTIONS ──
     for (const key of sectionOrder) {
       if (data[key] && typeof data[key] === 'string') {
@@ -217,8 +269,11 @@ export default function ReviewSheet() {
           const trimmed = line.trim();
           if (trimmed) {
             checkPage(7);
-            addText(trimmed, 10, false, [50, 50, 50]);
+            renderRichLine(trimmed, 10, [50, 50, 50]);
             addSpacing(1);
+          } else {
+            // Blank line = extra spacing
+            addSpacing(4);
           }
         }
         addSpacing(5);
