@@ -16,11 +16,7 @@ export default function Settings() {
   const handleSendFeedback = async () => {
     if (!feedback.trim()) return;
     setSending(true);
-    await base44.integrations.Core.SendEmail({
-      to: 'mediocreatbestdev@outlook.com',
-      subject: 'SitterHandbook Feedback',
-      body: feedback,
-    });
+    await base44.functions.invoke('sendFeedback', { message: feedback });
     setSent(true);
     setFeedback('');
     setSending(false);
