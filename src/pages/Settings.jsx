@@ -131,7 +131,7 @@ export default function Settings() {
 
               <div>
                 <h3 className="font-heading text-base font-semibold text-foreground mb-1">What We Collect</h3>
-                <p>PawNotes collects information you voluntarily provide, including pet care instructions, contact details, and uploaded photos. This information is stored securely and used only to generate your instruction sheets.</p>
+                <p>SitterHandbook collects information you voluntarily provide, including pet care instructions, contact details, and uploaded photos. This information is stored securely and used only to generate your instruction sheets.</p>
               </div>
 
               <div>
