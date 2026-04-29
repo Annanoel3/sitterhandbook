@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Download, ArrowLeft, Phone, Home, PawPrint, UtensilsCrossed, Pill, Footprints, Heart, Flower2, Fish, Bird, Trash2, AlertTriangle, StickyNote, User, UserCheck, DollarSign } from 'lucide-react';
+import { Loader2, Download, ArrowLeft, Phone, Home, PawPrint, UtensilsCrossed, Pill, Footprints, Heart, Flower2, Fish, Bird, Trash2, AlertTriangle, StickyNote, User, UserCheck, DollarSign, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AiChecklist from '../components/review/AiChecklist';
 import DraggableSections from '../components/review/DraggableSections';
@@ -52,6 +52,7 @@ export default function ReviewSheet() {
   const [generating, setGenerating] = useState(false);
   const [sectionOrder, setSectionOrder] = useState(SECTION_KEYS);
   const [newKey, setNewKey] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   // data is the canonical flat organized_data we show and edit
   const [data, setData] = useState({});
 
@@ -59,16 +60,33 @@ export default function ReviewSheet() {
   const sheetId = urlParams.get('id');
 
   useEffect(() => {
+    base44.auth.isAuthenticated().then(setIsLoggedIn);
+  }, []);
+
+  useEffect(() => {
     if (!sheetId) return;
     loadSheet();
   }, [sheetId]);
 
   const loadSheet = async () => {
-    const results = await base44.entities.InstructionSheet.list();
-    const found = results.find(s => s.id === sheetId);
-    if (found) {
-      setSheet(found);
-      setData(flattenOrganizedData(found.organized_data));
+    // Try session storage first (guest sheets and freshly created sheets)
+    const cached = sessionStorage.getItem(`guest_sheet_${sheetId}`);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      setSheet(parsed);
+      setData(flattenOrganizedData(parsed.organized_data));
+      setLoading(false);
+      return;
+    }
+    // Fallback: fetch from DB (logged-in users loading old sheets)
+    const isAuthed = await base44.auth.isAuthenticated();
+    if (isAuthed) {
+      const results = await base44.entities.InstructionSheet.list();
+      const found = results.find(s => s.id === sheetId);
+      if (found) {
+        setSheet(found);
+        setData(flattenOrganizedData(found.organized_data));
+      }
     }
     setLoading(false);
   };
@@ -76,7 +94,9 @@ export default function ReviewSheet() {
   const updateCategory = async (key, value) => {
     const updatedData = { ...data, [key]: value };
     setData(updatedData);
-    await base44.entities.InstructionSheet.update(sheetId, { organized_data: updatedData });
+    if (sheetId && !sheetId.startsWith('guest-')) {
+      await base44.entities.InstructionSheet.update(sheetId, { organized_data: updatedData });
+    }
   };
 
   const loadImageAsDataUrl = (url) => {
@@ -290,21 +310,46 @@ export default function ReviewSheet() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-3xl mx-auto px-6 py-10">
+        {/* Locked banner */}
+        {!isLoggedIn && (
+          <div className="sticky top-0 z-40 -mx-6 px-6 py-3 bg-primary text-primary-foreground flex flex-col sm:flex-row items-center justify-between gap-3 shadow-lg">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Lock className="w-4 h-4 shrink-0" />
+              <span>Sign in to unlock the full preview, edit sections, and download your PDF.</span>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="rounded-lg shrink-0 font-semibold"
+              onClick={() => base44.auth.redirectToLogin(window.location.href)}
+            >
+              Sign in to unlock
+            </Button>
+          </div>
+        )}
+
         {/* Header */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mb-8 mt-6">
           <Link to="/create" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to editor
           </Link>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="font-heading text-3xl font-bold">{sheet.title}</h1>
-              <p className="text-muted-foreground mt-1">Review and edit each section, then download your PDF</p>
+              <p className="text-muted-foreground mt-1">
+                {isLoggedIn ? 'Review and edit each section, then download your PDF' : 'Sign in to edit sections and download your PDF'}
+              </p>
             </div>
             <div className="flex items-center gap-3 shrink-0">
-              <AiEditor sheetId={sheetId} data={data} onUpdated={setData} />
-              <Button size="lg" onClick={handleDownloadPDF} disabled={generating} className="rounded-xl shadow-lg shadow-primary/20">
-                {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
-                Download PDF
+              {isLoggedIn && <AiEditor sheetId={sheetId} data={data} onUpdated={setData} />}
+              <Button
+                size="lg"
+                onClick={isLoggedIn ? handleDownloadPDF : () => base44.auth.redirectToLogin(window.location.href)}
+                disabled={generating}
+                className="rounded-xl shadow-lg shadow-primary/20"
+              >
+                {generating ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : isLoggedIn ? <Download className="w-4 h-4 mr-2" /> : <Lock className="w-4 h-4 mr-2" />}
+                {isLoggedIn ? 'Download PDF' : 'Sign in to Download'}
               </Button>
             </div>
           </div>
@@ -349,12 +394,14 @@ export default function ReviewSheet() {
         </Card>
 
         {/* AI Completeness Checker */}
-        <AiChecklist organizedData={data} rawText={sheet.raw_text} />
+        {isLoggedIn && <AiChecklist organizedData={data} rawText={sheet.raw_text} />}
 
         {/* Organized Sections — draggable + editable */}
-        <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
-          <span>⠿</span> Drag sections to reorder how they appear in the PDF
-        </p>
+        {isLoggedIn && (
+          <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
+            <span>⠿</span> Drag sections to reorder how they appear in the PDF
+          </p>
+        )}
         <DraggableSections
           orderedKeys={sectionOrder}
           categoryConfig={categoryConfig}
@@ -362,16 +409,19 @@ export default function ReviewSheet() {
           onUpdate={updateCategory}
           onReorder={setSectionOrder}
           newKey={newKey}
+          locked={!isLoggedIn}
         />
-        <AddSectionButton
-          categoryConfig={categoryConfig}
-          data={data}
-          onAdd={(key) => {
-            if (!sectionOrder.includes(key)) setSectionOrder(prev => [...prev, key]);
-            setNewKey(key);
-            updateCategory(key, ' ');
-          }}
-        />
+        {isLoggedIn && (
+          <AddSectionButton
+            categoryConfig={categoryConfig}
+            data={data}
+            onAdd={(key) => {
+              if (!sectionOrder.includes(key)) setSectionOrder(prev => [...prev, key]);
+              setNewKey(key);
+              updateCategory(key, ' ');
+            }}
+          />
+        )}
 
         {/* Photos */}
         {sheet.photo_urls?.length > 0 && (
@@ -380,10 +430,17 @@ export default function ReviewSheet() {
 
         {/* Bottom actions */}
         <div className="mt-10 pb-12 flex flex-col sm:flex-row gap-4">
-          <Button size="lg" onClick={handleDownloadPDF} disabled={generating} className="flex-1 rounded-xl py-6 shadow-lg shadow-primary/20">
-            {generating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Download className="w-5 h-5 mr-2" />}
-            Download PDF
-          </Button>
+          {isLoggedIn ? (
+            <Button size="lg" onClick={handleDownloadPDF} disabled={generating} className="flex-1 rounded-xl py-6 shadow-lg shadow-primary/20">
+              {generating ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Download className="w-5 h-5 mr-2" />}
+              Download PDF
+            </Button>
+          ) : (
+            <Button size="lg" onClick={() => base44.auth.redirectToLogin(window.location.href)} className="flex-1 rounded-xl py-6 shadow-lg shadow-primary/20">
+              <Lock className="w-5 h-5 mr-2" />
+              Sign in to Download PDF
+            </Button>
+          )}
           <Link to="/create" className="flex-1">
             <Button size="lg" variant="outline" className="w-full rounded-xl py-6">Create Another Sheet</Button>
           </Link>

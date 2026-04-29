@@ -33,20 +33,22 @@ const AuthenticatedApp = () => {
 
   // Handle authentication errors
   if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Allow home page to show without auth; protect other routes
-      return (
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="*" element={<RedirectToLogin />} />
-          </Route>
-        </Routes>
-      );
+      if (authError.type === 'user_not_registered') {
+        return <UserNotRegisteredError />;
+      } else if (authError.type === 'auth_required') {
+        // Allow home and review pages without auth; protect other routes
+        return (
+          <Routes>
+            <Route element={<AppLayout />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/create" element={<CreateSheet />} />
+              <Route path="/review" element={<ReviewSheet />} />
+              <Route path="*" element={<RedirectToLogin />} />
+            </Route>
+          </Routes>
+        );
+      }
     }
-  }
 
   // Render the main app
   return (

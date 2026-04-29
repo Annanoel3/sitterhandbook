@@ -30,8 +30,8 @@ export default function CreateSheet() {
 
   useEffect(() => {
     base44.auth.isAuthenticated().then(async (authed) => {
-      if (!authed) { base44.auth.redirectToLogin(); return; }
-      // Pre-fill notes with saved pets
+      if (!authed) return;
+      // Pre-fill notes with saved pets (only if logged in)
       const pets = await base44.entities.Pet.list();
       if (pets.length > 0) {
         const petLines = pets.map(p => {
@@ -79,6 +79,8 @@ export default function CreateSheet() {
 
     setIsProcessing(true);
 
+    const isAuthed = await base44.auth.isAuthenticated();
+
     const ownerInfo = [
       ownerName && `Owner: ${ownerName}`,
       ownerPhone && `Phone: ${ownerPhone}`,
@@ -94,7 +96,30 @@ export default function CreateSheet() {
 
     const fullNotes = [ownerInfo, sitterInfo, payInfo, text].filter(Boolean).join('\n\n');
 
-    const sheet = await base44.entities.InstructionSheet.create({
+    // For unauthenticated users, use a temporary in-memory ID
+    const tempId = `guest-${Date.now()}`;
+    let sheetId = tempId;
+
+    if (isAuthed) {
+      const sheet = await base44.entities.InstructionSheet.create({
+        title: title || 'My Pet Sitter Instructions',
+        raw_text: text,
+        photo_urls: photos.map(p => p.url),
+        photo_labels: photos.map(p => p.label),
+        photo_captions: photos.map(p => p.caption || ''),
+        status: 'organizing',
+        organized_data: {
+          _owner: { name: ownerName, phone: ownerPhone, email: ownerEmail },
+          _sitter: { name: sitterName, phone: sitterPhone },
+          _pay: payRate ? `$${payRate} ${payPeriod}` : '',
+        },
+      });
+      sheetId = sheet.id;
+    }
+
+    // Store a temporary sheet object for guest preview
+    const tempSheet = {
+      id: sheetId,
       title: title || 'My Pet Sitter Instructions',
       raw_text: text,
       photo_urls: photos.map(p => p.url),
@@ -106,12 +131,15 @@ export default function CreateSheet() {
         _sitter: { name: sitterName, phone: sitterPhone },
         _pay: payRate ? `$${payRate} ${payPeriod}` : '',
       },
-    });
+    };
+    // Always cache for guest fallback on review page
+    sessionStorage.setItem(`guest_sheet_${sheetId}`, JSON.stringify(tempSheet));
 
     const photoContext = photos
       .filter(p => p.label || p.caption)
       .map((p, i) => `Photo ${i + 1}: ${p.label}${p.caption ? ` — ${p.caption}` : ''}`)
       .join('\n');
+
 
     const result = await base44.integrations.Core.InvokeLLM({
       model: "claude_sonnet_4_6",
@@ -172,29 +200,34 @@ Remember: only include what was actually said. Never fill in gaps with assumed i
       _pay: payRate ? `$${payRate} ${payPeriod}` : '',
     };
 
-    await base44.entities.InstructionSheet.update(sheet.id, {
-      organized_data: finalData,
-      status: 'ready',
-    });
+    // Update the cached sheet with AI data
+    const finalSheet = { ...tempSheet, organized_data: finalData, status: 'ready' };
+    sessionStorage.setItem(`guest_sheet_${sheetId}`, JSON.stringify(finalSheet));
 
-    // Auto-save new pets from the organized data
-    if (aiData.pets_overview) {
-      const existingPets = await base44.entities.Pet.list();
-      const existingNames = existingPets.map(p => p.name.toLowerCase());
-      const petLines = aiData.pets_overview.split('\n').filter(l => l.trim().startsWith('•'));
-      for (const line of petLines) {
-        const clean = line.replace(/^•\s*/, '').trim();
-        // Try to extract the pet name (first word or words before comma)
-        const nameMatch = clean.match(/^([^,]+)/);
-        if (!nameMatch) continue;
-        const petName = nameMatch[1].trim();
-        if (!petName || existingNames.includes(petName.toLowerCase())) continue;
-        await base44.entities.Pet.create({ name: petName });
+    if (isAuthed) {
+      await base44.entities.InstructionSheet.update(sheetId, {
+        organized_data: finalData,
+        status: 'ready',
+      });
+
+      // Auto-save new pets from the organized data
+      if (aiData.pets_overview) {
+        const existingPets = await base44.entities.Pet.list();
+        const existingNames = existingPets.map(p => p.name.toLowerCase());
+        const petLines = aiData.pets_overview.split('\n').filter(l => l.trim().startsWith('•'));
+        for (const line of petLines) {
+          const clean = line.replace(/^•\s*/, '').trim();
+          const nameMatch = clean.match(/^([^,]+)/);
+          if (!nameMatch) continue;
+          const petName = nameMatch[1].trim();
+          if (!petName || existingNames.includes(petName.toLowerCase())) continue;
+          await base44.entities.Pet.create({ name: petName });
+        }
       }
     }
 
     setIsProcessing(false);
-    navigate(`/review?id=${sheet.id}`);
+    navigate(`/review?id=${sheetId}`);
   };
 
   return (

@@ -4,15 +4,18 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Pencil, Check, X } from 'lucide-react';
 
-export default function CategorySection({ icon: Icon, title, content, onUpdate, color, autoEdit = false }) {
+export default function CategorySection({ icon: Icon, title, content, onUpdate, color, autoEdit = false, locked = false }) {
   const [editing, setEditing] = useState(autoEdit);
-  const [editValue, setEditValue] = useState(autoEdit ? '' : '');
+  const [editValue, setEditValue] = useState('');
 
   if (!content && !autoEdit) return null;
   if (Array.isArray(content) && content.length === 0 && !autoEdit) return null;
 
-  const displayContent = Array.isArray(content) ? content.join('\n') : 
+  const displayContent = Array.isArray(content) ? content.join('\n') :
     typeof content === 'object' ? JSON.stringify(content, null, 2) : String(content);
+
+  // For locked preview: show only the first 3 lines
+  const previewLines = displayContent.split('\n').slice(0, 3).join('\n');
 
   const startEdit = () => {
     setEditValue(displayContent);
@@ -34,7 +37,7 @@ export default function CategorySection({ icon: Icon, title, content, onUpdate, 
             </div>
             <CardTitle className="font-heading text-lg">{title}</CardTitle>
           </div>
-          {!editing && (
+          {!editing && !locked && (
             <Button variant="ghost" size="sm" onClick={startEdit} className="text-muted-foreground hover:text-foreground">
               <Pencil className="w-4 h-4" />
             </Button>
@@ -42,7 +45,14 @@ export default function CategorySection({ icon: Icon, title, content, onUpdate, 
         </div>
       </CardHeader>
       <CardContent>
-        {editing ? (
+        {locked ? (
+          <div className="relative">
+            <div className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed line-clamp-3">
+              {previewLines}
+            </div>
+            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-card to-transparent pointer-events-none" />
+          </div>
+        ) : editing ? (
           <div className="space-y-3">
             <Textarea
               value={editValue}

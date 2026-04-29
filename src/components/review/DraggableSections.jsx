@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { GripVertical } from 'lucide-react';
 import CategorySection from './CategorySection';
 
-export default function DraggableSections({ orderedKeys, categoryConfig, data, onUpdate, onReorder, newKey }) {
+export default function DraggableSections({ orderedKeys, categoryConfig, data, onUpdate, onReorder, newKey, locked = false }) {
   const onDragEnd = (result) => {
     if (!result.destination) return;
     const newOrder = Array.from(orderedKeys);
@@ -47,6 +47,7 @@ export default function DraggableSections({ orderedKeys, categoryConfig, data, o
                           content={data[key]}
                           onUpdate={(val) => onUpdate(key, val)}
                           autoEdit={key === newKey}
+                          locked={locked}
                         />
                       </div>
                     </div>
