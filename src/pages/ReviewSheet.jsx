@@ -161,10 +161,10 @@ export default function ReviewSheet() {
     doc.text(`Prepared with love  •  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, 26, { align: 'center' });
 
     // "Made with SitterHandbook" watermark line beneath header
-    doc.setFontSize(6.5);
-    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(180, 220, 200);
-    doc.text('Made with SitterHandbook', pageWidth / 2, 36, { align: 'center' });
+    doc.textWithLink('Made with SitterHandbook • sitterhandbook.com', pageWidth / 2, 36, { align: 'center', url: 'https://sitterhandbook.com' });
 
     if (pay) {
       doc.setFillColor(255, 255, 255);

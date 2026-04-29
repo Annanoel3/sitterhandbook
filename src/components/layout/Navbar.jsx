@@ -19,7 +19,7 @@ export default function Navbar() {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <PawPrint className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="font-heading font-semibold text-lg hidden sm:block">PawNotes</span>
+          <span className="font-heading font-semibold text-lg hidden sm:block">SitterHandbook</span>
         </Link>
         <div className="flex items-center gap-1">
           {links.map(link => {
