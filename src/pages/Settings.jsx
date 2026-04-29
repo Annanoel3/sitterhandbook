@@ -2,10 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Moon, Sun, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Moon, Sun, Shield, MessageSquare, Code2, Mail, Loader2, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
 
 export default function Settings() {
+  const [feedback, setFeedback] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+
+  const handleSendFeedback = async () => {
+    if (!feedback.trim()) return;
+    setSending(true);
+    await base44.integrations.Core.SendEmail({
+      to: 'mediocreatbestdev@outlook.com',
+      subject: 'SitterHandbook Feedback',
+      body: feedback,
+    });
+    setSent(true);
+    setFeedback('');
+    setSending(false);
+  };
+
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem('pawnotes-dark') === 'true' ||
       window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -46,6 +66,59 @@ export default function Settings() {
                   onCheckedChange={setDarkMode}
                 />
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Feedback */}
+          <Card className="border-border/60 mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-heading text-lg flex items-center gap-2">
+                <MessageSquare className="w-5 h-5" />
+                Send Feedback
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">Have a suggestion, bug report, or just want to say hi? We'd love to hear from you.</p>
+              {sent ? (
+                <div className="flex items-center gap-2 text-primary text-sm font-medium">
+                  <CheckCircle2 className="w-4 h-4" /> Thanks for your feedback!
+                </div>
+              ) : (
+                <>
+                  <Textarea
+                    placeholder="Tell us what you think..."
+                    value={feedback}
+                    onChange={(e) => setFeedback(e.target.value)}
+                    className="min-h-[100px] rounded-xl resize-none"
+                  />
+                  <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <Button onClick={handleSendFeedback} disabled={!feedback.trim() || sending} className="rounded-xl">
+                      {sending ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : <><Mail className="w-4 h-4 mr-2" />Send Feedback</>}
+                    </Button>
+                    <a
+                      href="mailto:mediocreatbestdev@outlook.com"
+                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
+                    >
+                      <Mail className="w-4 h-4" />
+                      mediocreatbestdev@outlook.com
+                    </a>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* About */}
+          <Card className="border-border/60 mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-heading text-lg flex items-center gap-2">
+                <Code2 className="w-5 h-5" />
+                About
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="text-sm text-muted-foreground space-y-2">
+              <p>SitterHandbook was created by <span className="font-semibold text-foreground">MediocreAtBestDev</span>.</p>
+              <p>All intellectual property, including the design, code, and brand, is owned by <span className="font-semibold text-foreground">MediocreAtBestDev</span>. All rights reserved.</p>
             </CardContent>
           </Card>
 
