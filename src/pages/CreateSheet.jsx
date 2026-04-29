@@ -96,6 +96,7 @@ export default function CreateSheet() {
       prompt: `You are an expert at organizing pet/house sitting instructions. Take the following rambled notes from a pet owner and organize them into a clear, comprehensive instruction sheet.
 
 CRITICAL RULES:
+0. Write ALL content in second person, directly addressing the pet sitter as "you". NEVER write "the owner has been doing..." or "the sitter should..." or refer to anyone in third person. Instead write "feed Buddy at 7am" or "you'll find the leash on the hook by the door". This sheet is written FROM the owner TO the sitter, so write it that way.
 1. NEVER invent, assume, or add ANY information not explicitly stated in the notes. No assumptions, no "likely", no "probably", no filling gaps. If it wasn't said, it does not exist.
 2. NEVER add negative statements about things not mentioned (e.g. do NOT write "no need to deal with mail" or "no other instructions" — simply omit that topic entirely).
 3. NEVER use placeholder text like "unspecified", "unknown", "not mentioned", or "N/A" — if a detail wasn't given, leave it out entirely.

@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import AiChecklist from '../components/review/AiChecklist';
 import DraggableSections from '../components/review/DraggableSections';
 import AiEditor from '../components/review/AiEditor';
+import PhotoCaptionEditor from '../components/review/PhotoCaptionEditor';
 
 export const categoryConfig = {
   owner_contact: { icon: Phone, title: 'Owner Contact Info', color: 'bg-primary/10 text-primary' },
@@ -158,6 +159,12 @@ export default function ReviewSheet() {
     doc.setFontSize(8);
     doc.setTextColor(200, 240, 220);
     doc.text(`Prepared with love  •  ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageWidth / 2, 26, { align: 'center' });
+
+    // "Made with SitterHandbook" watermark line beneath header
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(180, 220, 200);
+    doc.text('Made with SitterHandbook', pageWidth / 2, 36, { align: 'center' });
 
     if (pay) {
       doc.setFillColor(255, 255, 255);
@@ -356,26 +363,7 @@ export default function ReviewSheet() {
 
         {/* Photos */}
         {sheet.photo_urls?.length > 0 && (
-          <div className="mt-10 mb-8">
-            <h3 className="font-heading text-lg font-semibold mb-3">📸 Photo Reference Guide</h3>
-            <div className="space-y-3">
-              {sheet.photo_urls.map((url, i) => {
-                const label = sheet.photo_labels?.[i] || `Photo ${i + 1}`;
-                const caption = sheet.photo_captions?.[i] || '';
-                return (
-                  <div key={url} className="flex gap-3 bg-card border border-border/60 rounded-xl p-3">
-                    <div className="w-20 h-20 rounded-lg overflow-hidden border border-border shrink-0">
-                      <img src={url} alt={label} className="w-full h-full object-cover" />
-                    </div>
-                    <div>
-                      <p className="font-medium text-sm">{label}</p>
-                      {caption && <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{caption}</p>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <PhotoCaptionEditor sheet={sheet} setSheet={setSheet} sheetId={sheetId} />
         )}
 
         {/* Bottom actions */}

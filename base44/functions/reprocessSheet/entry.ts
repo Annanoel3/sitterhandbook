@@ -33,6 +33,7 @@ Deno.serve(async (req) => {
       prompt: `You are an expert at organizing pet/house sitting instructions. Take the following rambled notes from a pet owner and organize them into a clear, comprehensive instruction sheet.
 
 CRITICAL RULES:
+0. Write ALL content in second person, directly addressing the pet sitter as "you". NEVER write "the owner has been doing..." or "the sitter should..." or refer to anyone in third person. Instead write "feed Buddy at 7am" or "you'll find the leash on the hook by the door". This sheet is written FROM the owner TO the sitter, so write it that way.
 1. NEVER invent, assume, or add ANY information not explicitly stated in the notes.
 2. NEVER add negative statements about things not mentioned.
 3. NEVER use placeholder text like "unspecified", "unknown", "not mentioned", or "N/A".

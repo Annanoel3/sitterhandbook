@@ -76,7 +76,7 @@ ${currentSections}
 OWNER'S REQUESTED CHANGES:
 ${instruction}
 
-Apply the requested changes carefully. You may add new information, remove information, or modify existing details as requested. Do not change anything that was not mentioned in the requested changes. Preserve all existing bullet point formatting using "• " prefix.
+Apply the requested changes carefully. You may add new information, remove information, or modify existing details as requested. Do not change anything that was not mentioned in the requested changes. Preserve all existing bullet point formatting using "• " prefix. Write all content in second person, directly addressing the sitter as "you" — never refer to the owner or sitter in third person.
 
 Return ONLY a valid JSON object (no markdown, no code fences) with the same section keys as above, updated to reflect the changes. Only include sections that have content. Example:
 {"pets_overview":"...","feeding_schedule":"...",...}`,
