@@ -1,0 +1,30 @@
+{
+  "name": "Pet",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "species": {
+      "type": "string"
+    },
+    "breed": {
+      "type": "string"
+    },
+    "age": {
+      "type": "string"
+    },
+    "feeding_notes": {
+      "type": "string"
+    },
+    "medical_notes": {
+      "type": "string"
+    },
+    "quirks": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name"
+  ]
+}

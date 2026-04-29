@@ -29,8 +29,24 @@ export default function CreateSheet() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    base44.auth.isAuthenticated().then(authed => {
-      if (!authed) base44.auth.redirectToLogin();
+    base44.auth.isAuthenticated().then(async (authed) => {
+      if (!authed) { base44.auth.redirectToLogin(); return; }
+      // Pre-fill notes with saved pets
+      const pets = await base44.entities.Pet.list();
+      if (pets.length > 0) {
+        const petLines = pets.map(p => {
+          const parts = [`${p.name}`];
+          if (p.species) parts.push(p.species);
+          if (p.breed) parts.push(p.breed);
+          if (p.age) parts.push(`${p.age} old`);
+          let line = parts.join(', ') + '.';
+          if (p.feeding_notes) line += ` Feeding: ${p.feeding_notes}`;
+          if (p.medical_notes) line += ` Medical: ${p.medical_notes}`;
+          if (p.quirks) line += ` Quirks: ${p.quirks}`;
+          return line;
+        });
+        setText('My pets:\n' + petLines.join('\n') + '\n\n');
+      }
     });
   }, []);
 
@@ -160,6 +176,22 @@ Remember: only include what was actually said. Never fill in gaps with assumed i
       organized_data: finalData,
       status: 'ready',
     });
+
+    // Auto-save new pets from the organized data
+    if (aiData.pets_overview) {
+      const existingPets = await base44.entities.Pet.list();
+      const existingNames = existingPets.map(p => p.name.toLowerCase());
+      const petLines = aiData.pets_overview.split('\n').filter(l => l.trim().startsWith('•'));
+      for (const line of petLines) {
+        const clean = line.replace(/^•\s*/, '').trim();
+        // Try to extract the pet name (first word or words before comma)
+        const nameMatch = clean.match(/^([^,]+)/);
+        if (!nameMatch) continue;
+        const petName = nameMatch[1].trim();
+        if (!petName || existingNames.includes(petName.toLowerCase())) continue;
+        await base44.entities.Pet.create({ name: petName });
+      }
+    }
 
     setIsProcessing(false);
     navigate(`/review?id=${sheet.id}`);

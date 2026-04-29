@@ -3,7 +3,7 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { GripVertical } from 'lucide-react';
 import CategorySection from './CategorySection';
 
-export default function DraggableSections({ orderedKeys, categoryConfig, data, onUpdate, onReorder }) {
+export default function DraggableSections({ orderedKeys, categoryConfig, data, onUpdate, onReorder, newKey }) {
   const onDragEnd = (result) => {
     if (!result.destination) return;
     const newOrder = Array.from(orderedKeys);
@@ -12,8 +12,8 @@ export default function DraggableSections({ orderedKeys, categoryConfig, data, o
     onReorder(newOrder);
   };
 
-  // Only show keys that have content
-  const visibleKeys = orderedKeys.filter(k => data[k]);
+  // Show keys that have content OR are newly added
+  const visibleKeys = orderedKeys.filter(k => data[k] || k === newKey);
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
@@ -46,6 +46,7 @@ export default function DraggableSections({ orderedKeys, categoryConfig, data, o
                           color={config.color}
                           content={data[key]}
                           onUpdate={(val) => onUpdate(key, val)}
+                          autoEdit={key === newKey}
                         />
                       </div>
                     </div>

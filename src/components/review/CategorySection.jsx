@@ -4,11 +4,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Pencil, Check, X } from 'lucide-react';
 
-export default function CategorySection({ icon: Icon, title, content, onUpdate, color }) {
-  const [editing, setEditing] = useState(false);
-  const [editValue, setEditValue] = useState('');
+export default function CategorySection({ icon: Icon, title, content, onUpdate, color, autoEdit = false }) {
+  const [editing, setEditing] = useState(autoEdit);
+  const [editValue, setEditValue] = useState(autoEdit ? '' : '');
 
-  if (!content || (Array.isArray(content) && content.length === 0)) return null;
+  if (!content && !autoEdit) return null;
+  if (Array.isArray(content) && content.length === 0 && !autoEdit) return null;
 
   const displayContent = Array.isArray(content) ? content.join('\n') : 
     typeof content === 'object' ? JSON.stringify(content, null, 2) : String(content);

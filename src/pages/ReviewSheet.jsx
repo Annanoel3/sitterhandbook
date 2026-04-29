@@ -9,6 +9,7 @@ import AiChecklist from '../components/review/AiChecklist';
 import DraggableSections from '../components/review/DraggableSections';
 import AiEditor from '../components/review/AiEditor';
 import PhotoCaptionEditor from '../components/review/PhotoCaptionEditor';
+import AddSectionButton from '../components/review/AddSectionButton';
 
 export const categoryConfig = {
   owner_contact: { icon: Phone, title: 'Owner Contact Info', color: 'bg-primary/10 text-primary' },
@@ -50,6 +51,7 @@ export default function ReviewSheet() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [sectionOrder, setSectionOrder] = useState(SECTION_KEYS);
+  const [newKey, setNewKey] = useState(null);
   // data is the canonical flat organized_data we show and edit
   const [data, setData] = useState({});
 
@@ -359,6 +361,16 @@ export default function ReviewSheet() {
           data={data}
           onUpdate={updateCategory}
           onReorder={setSectionOrder}
+          newKey={newKey}
+        />
+        <AddSectionButton
+          categoryConfig={categoryConfig}
+          data={data}
+          onAdd={(key) => {
+            if (!sectionOrder.includes(key)) setSectionOrder(prev => [...prev, key]);
+            setNewKey(key);
+            updateCategory(key, ' ');
+          }}
         />
 
         {/* Photos */}
