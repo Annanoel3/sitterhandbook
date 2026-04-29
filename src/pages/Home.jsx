@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { PawPrint, Mic, FileText, Camera, Sparkles } from 'lucide-react';
+import { PawPrint, Mic, FileText, Camera, Sparkles, LogIn } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
 
 const features = [
   { icon: Mic, title: 'Talk or Type', desc: 'Ramble away — we\'ll organize it all for you' },
@@ -12,6 +13,8 @@ const features = [
 ];
 
 export default function Home() {
+  const handleLogin = () => base44.auth.redirectToLogin();
+
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -42,6 +45,10 @@ export default function Home() {
                   Create Your Sheet
                 </Button>
               </Link>
+              <Button size="lg" variant="outline" onClick={handleLogin} className="text-base px-8 py-6 rounded-xl">
+                <LogIn className="w-5 h-5 mr-2" />
+                Log In / Sign Up
+              </Button>
             </div>
           </motion.div>
         </div>

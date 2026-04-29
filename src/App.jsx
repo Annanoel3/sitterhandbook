@@ -1,3 +1,4 @@
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -11,6 +12,12 @@ import ReviewSheet from './pages/ReviewSheet';
 import MySheets from './pages/MySheets';
 import Settings from './pages/Settings';
 import AppLayout from './components/layout/AppLayout';
+
+const RedirectToLogin = () => {
+  const { navigateToLogin } = useAuth();
+  React.useEffect(() => { navigateToLogin(); }, []);
+  return null;
+};
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -29,9 +36,15 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
+      // Allow home page to show without auth; protect other routes
+      return (
+        <Routes>
+          <Route element={<AppLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="*" element={<RedirectToLogin />} />
+          </Route>
+        </Routes>
+      );
     }
   }
 
