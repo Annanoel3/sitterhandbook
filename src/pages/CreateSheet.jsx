@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -27,6 +27,12 @@ const prompts = [
 
 export default function CreateSheet() {
   const navigate = useNavigate();
+
+  useEffect(() => {
+    base44.auth.isAuthenticated().then(authed => {
+      if (!authed) base44.auth.redirectToLogin();
+    });
+  }, []);
 
   // Owner info
   const [ownerName, setOwnerName] = useState('');

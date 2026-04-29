@@ -11,7 +11,10 @@ import { motion } from 'framer-motion';
 export default function MySheets() {
   const { data: sheets = [], isLoading, refetch } = useQuery({
     queryKey: ['sheets'],
-    queryFn: () => base44.entities.InstructionSheet.list('-created_date', 50),
+    queryFn: async () => {
+      const user = await base44.auth.me();
+      return base44.entities.InstructionSheet.filter({ created_by: user.email }, '-created_date', 50);
+    },
   });
 
   const handleDelete = async (id, e) => {
