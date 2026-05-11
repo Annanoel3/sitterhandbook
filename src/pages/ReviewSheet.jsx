@@ -150,7 +150,7 @@ export default function ReviewSheet() {
     const pay = data._pay || '';
 
     // ── HEADER BANNER ──
-    doc.setFillColor(46, 125, 87);
+    doc.setFillColor(112, 80, 181);
     doc.rect(0, 0, pageWidth, 38, 'F');
 
     doc.setFontSize(8);
@@ -185,7 +185,7 @@ export default function ReviewSheet() {
     // "Made with SitterHandbook" watermark line beneath header
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(180, 220, 200);
+    doc.setTextColor(210, 190, 240);
     doc.textWithLink('Made with SitterHandbook • sitterhandbook.com', pageWidth / 2, 36, { align: 'center', url: 'https://sitterhandbook.com' });
 
     if (pay) {
@@ -193,7 +193,7 @@ export default function ReviewSheet() {
       doc.roundedRect(pageWidth / 2 - 28, 30, 56, 7, 2, 2, 'F');
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(46, 125, 87);
+      doc.setTextColor(112, 80, 181);
       doc.text(`Agreed Rate: ${pay}`, pageWidth / 2, 35, { align: 'center' });
     }
 
@@ -256,11 +256,11 @@ export default function ReviewSheet() {
       if (data[key] && typeof data[key] === 'string') {
         checkPage(18);
         const config = categoryConfig[key];
-        doc.setFillColor(240, 250, 244);
+        doc.setFillColor(242, 238, 252);
         doc.roundedRect(margin - 3, y - 4, maxWidth + 6, 9, 1.5, 1.5, 'F');
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(46, 125, 87);
+        doc.setTextColor(112, 80, 181);
         doc.text(config.title.toUpperCase(), margin, y + 2);
         y += 8;
 
@@ -283,11 +283,11 @@ export default function ReviewSheet() {
     // ── PHOTOS ──
     if (sheet.photo_urls?.length) {
       checkPage(18);
-      doc.setFillColor(240, 250, 244);
+      doc.setFillColor(242, 238, 252);
       doc.roundedRect(margin - 3, y - 4, maxWidth + 6, 9, 1.5, 1.5, 'F');
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(46, 125, 87);
+      doc.setTextColor(112, 80, 181);
       doc.text('PHOTO REFERENCE GUIDE', margin, y + 2);
       y += 10;
 
