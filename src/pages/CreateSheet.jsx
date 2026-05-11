@@ -5,7 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowRight, Loader2, PawPrint, Lightbulb, DollarSign } from 'lucide-react';
+import { ArrowRight, Loader2, PawPrint, Lightbulb, DollarSign, BookOpen, CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import VoiceRecorder from '../components/create/VoiceRecorder';
@@ -68,6 +69,48 @@ export default function CreateSheet() {
   const [text, setText] = useState('');
   const [photos, setPhotos] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [savedInfo, setSavedInfo] = useState(null);
+  const [infoLoaded, setInfoLoaded] = useState(false);
+
+  useEffect(() => {
+    base44.auth.isAuthenticated().then(async (authed) => {
+      if (!authed) return;
+      const user = await base44.auth.me();
+      const results = await base44.entities.HouseholdInfo.filter({ created_by: user.email });
+      if (results.length > 0) setSavedInfo(results[0]);
+    });
+  }, []);
+
+  const loadSavedInfo = () => {
+    if (!savedInfo) return;
+    // Pre-fill owner fields
+    if (savedInfo.owner_name) setOwnerName(savedInfo.owner_name);
+    if (savedInfo.owner_phone) setOwnerPhone(savedInfo.owner_phone);
+    if (savedInfo.owner_email) setOwnerEmail(savedInfo.owner_email);
+
+    // Build notes from saved info
+    const parts = [];
+    if (savedInfo.pets?.length > 0) {
+      const petLines = savedInfo.pets.map(p => {
+        let line = p.name;
+        if (p.species) line += `, ${p.species}`;
+        if (p.breed) line += `, ${p.breed}`;
+        if (p.age) line += `, ${p.age} old`;
+        if (p.feeding) line += `. Feeding: ${p.feeding}`;
+        if (p.medical) line += `. Medical: ${p.medical}`;
+        if (p.quirks) line += `. Quirks: ${p.quirks}`;
+        return line;
+      });
+      parts.push('My pets:\n' + petLines.join('\n'));
+    }
+    if (savedInfo.plants) parts.push('Plants:\n' + savedInfo.plants);
+    if (savedInfo.house_access) parts.push('House access:\n' + savedInfo.house_access);
+    if (savedInfo.emergency_contacts) parts.push('Emergency contacts:\n' + savedInfo.emergency_contacts);
+    if (savedInfo.misc_notes) parts.push('Other notes:\n' + savedInfo.misc_notes);
+
+    if (parts.length > 0) setText(parts.join('\n\n'));
+    setInfoLoaded(true);
+  };
 
   const handleVoiceTranscript = (transcript) => {
     // transcript already includes the existing text prefix (set in VoiceRecorder)
@@ -210,6 +253,37 @@ Remember: only include what was actually said. Never fill in gaps with assumed i
         status: 'ready',
       });
 
+      // Auto-update HouseholdInfo with new pets + info from this sheet
+      const user = await base44.auth.me();
+      const existingInfos = await base44.entities.HouseholdInfo.filter({ created_by: user.email });
+      const householdPayload = {
+        owner_name: ownerName || undefined,
+        owner_phone: ownerPhone || undefined,
+        owner_email: ownerEmail || undefined,
+
+      };
+
+      // Parse pets from AI output and merge
+      let mergedPets = existingInfos[0]?.pets || [];
+      if (aiData.pets_overview) {
+        const petLines = aiData.pets_overview.split('\n').filter(l => l.trim().startsWith('•'));
+        for (const line of petLines) {
+          const clean = line.replace(/^•\s*/, '').trim();
+          const nameMatch = clean.match(/^([^,]+)/);
+          if (!nameMatch) continue;
+          const petName = nameMatch[1].trim();
+          if (!petName || mergedPets.find(p => p.name.toLowerCase() === petName.toLowerCase())) continue;
+          mergedPets = [...mergedPets, { name: petName }];
+        }
+      }
+      if (mergedPets.length > 0) householdPayload.pets = mergedPets;
+
+      if (existingInfos.length > 0) {
+        await base44.entities.HouseholdInfo.update(existingInfos[0].id, householdPayload);
+      } else if (ownerName || mergedPets.length > 0) {
+        await base44.entities.HouseholdInfo.create(householdPayload);
+      }
+
       // Auto-save new pets from the organized data
       if (aiData.pets_overview) {
         const existingPets = await base44.entities.Pet.list();
@@ -250,6 +324,39 @@ Remember: only include what was actually said. Never fill in gaps with assumed i
               className="rounded-xl h-12 text-base"
             />
           </div>
+
+          {/* Saved Info Banner */}
+          {savedInfo && (
+            <Card className={`border-primary/30 ${infoLoaded ? 'bg-primary/5' : 'bg-primary/5'}`}>
+              <CardContent className="p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-3">
+                  <BookOpen className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-medium text-primary">You have saved household info</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {infoLoaded
+                        ? 'Your saved pets, plants, and home info has been loaded into the notes below. Add anything new for this trip!'
+                        : `${savedInfo.pets?.filter(p => p.name).length || 0} pet(s), plants, access info and more — click to pre-fill your notes.`}
+                    </p>
+                  </div>
+                </div>
+                {infoLoaded ? (
+                  <span className="flex items-center gap-1 text-xs text-primary font-medium shrink-0">
+                    <CheckCircle2 className="w-4 h-4" /> Loaded
+                  </span>
+                ) : (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button size="sm" onClick={loadSavedInfo} className="rounded-lg text-xs">
+                      <BookOpen className="w-3.5 h-3.5 mr-1" /> Load My Info
+                    </Button>
+                    <Link to="/household" className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">
+                      Edit saved info
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Owner + Sitter Info */}
           <Card className="border-border/60 bg-card">

@@ -1,0 +1,57 @@
+{
+  "name": "HouseholdInfo",
+  "type": "object",
+  "properties": {
+    "pets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "species": {
+            "type": "string"
+          },
+          "breed": {
+            "type": "string"
+          },
+          "age": {
+            "type": "string"
+          },
+          "feeding": {
+            "type": "string"
+          },
+          "medical": {
+            "type": "string"
+          },
+          "quirks": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "plants": {
+      "type": "string"
+    },
+    "house_access": {
+      "type": "string"
+    },
+    "emergency_contacts": {
+      "type": "string"
+    },
+    "misc_notes": {
+      "type": "string"
+    },
+    "owner_name": {
+      "type": "string"
+    },
+    "owner_phone": {
+      "type": "string"
+    },
+    "owner_email": {
+      "type": "string"
+    }
+  },
+  "required": []
+}

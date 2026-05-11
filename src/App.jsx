@@ -13,6 +13,7 @@ import MySheets from './pages/MySheets';
 import Settings from './pages/Settings';
 import AppLayout from './components/layout/AppLayout';
 import ExampleSheet from './pages/ExampleSheet';
+import HouseholdInfoPage from './pages/HouseholdInfo';
 
 const RedirectToLogin = () => {
   const { navigateToLogin } = useAuth();
@@ -61,6 +62,7 @@ const AuthenticatedApp = () => {
         <Route path="/review" element={<ReviewSheet />} />
         <Route path="/example" element={<ExampleSheet />} />
         <Route path="/sheets" element={<MySheets />} />
+        <Route path="/household" element={<HouseholdInfoPage />} />
         <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
