@@ -11,13 +11,5 @@ import React from "react";
  * Until then this renders a tasteful placeholder so layout stays stable.
  */
 export default function AdSlot({ className = "" }) {
-  return (
-    <div className={`w-full ${className}`}>
-      {/* ── Swap this block for your real ad unit ── */}
-      <div className="flex items-center justify-center rounded-xl border border-dashed border-border bg-secondary/40 text-muted-foreground text-xs py-4 px-6 min-h-[90px]">
-        Advertisement
-      </div>
-      {/* ────────────────────────────────────────── */}
-    </div>
-  );
+  return null;
 }
