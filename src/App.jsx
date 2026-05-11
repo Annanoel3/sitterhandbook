@@ -5,9 +5,8 @@ import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-route
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import CreateSheet from '@/pages/CreateSheet';
+import Home from '@/pages/Home';
 import Privacy from '@/pages/Privacy';
-import OriginalHome from '@/pages/OriginalHome';
 import { SettingsProvider } from '@/lib/SettingsContext';
 import { initAdMob, maybeShowAdOnOpen } from '@/lib/admob';
 import { useEffect } from 'react';
@@ -50,7 +49,7 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
-      <Route path="/" element={<OriginalHome />} />
+      <Route path="/" element={<Home />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
