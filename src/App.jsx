@@ -1,4 +1,3 @@
-import React from 'react';
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
@@ -6,20 +5,10 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import Home from './pages/Home';
-import CreateSheet from './pages/CreateSheet';
-import ReviewSheet from './pages/ReviewSheet';
-import MySheets from './pages/MySheets';
-import Settings from './pages/Settings';
-import AppLayout from './components/layout/AppLayout';
-import ExampleSheet from './pages/ExampleSheet';
-import HouseholdInfoPage from './pages/HouseholdInfo';
-
-const RedirectToLogin = () => {
-  const { navigateToLogin } = useAuth();
-  React.useEffect(() => { navigateToLogin(); }, []);
-  return null;
-};
+import Home from '@/pages/Home';
+import { SettingsProvider } from '@/lib/SettingsContext';
+import { initAdMob, maybeShowAdOnOpen } from '@/lib/admob';
+import { useEffect } from 'react';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -35,36 +24,19 @@ const AuthenticatedApp = () => {
 
   // Handle authentication errors
   if (authError) {
-      if (authError.type === 'user_not_registered') {
-        return <UserNotRegisteredError />;
-      } else if (authError.type === 'auth_required') {
-        // Allow home and review pages without auth; protect other routes
-        return (
-          <Routes>
-            <Route element={<AppLayout />}>
-              <Route path="/" element={<Home />} />
-              <Route path="/create" element={<CreateSheet />} />
-              <Route path="/review" element={<ReviewSheet />} />
-              <Route path="/example" element={<ExampleSheet />} />
-              <Route path="*" element={<RedirectToLogin />} />
-            </Route>
-          </Routes>
-        );
-      }
+    if (authError.type === 'user_not_registered') {
+      return <UserNotRegisteredError />;
+    } else if (authError.type === 'auth_required') {
+      // Redirect to login automatically
+      navigateToLogin();
+      return null;
     }
+  }
 
   // Render the main app
   return (
     <Routes>
-      <Route element={<AppLayout />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/create" element={<CreateSheet />} />
-        <Route path="/review" element={<ReviewSheet />} />
-        <Route path="/example" element={<ExampleSheet />} />
-        <Route path="/sheets" element={<MySheets />} />
-        <Route path="/household" element={<HouseholdInfoPage />} />
-        <Route path="/settings" element={<Settings />} />
-      </Route>
+      <Route path="/" element={<Home />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
@@ -72,16 +44,21 @@ const AuthenticatedApp = () => {
 
 
 function App() {
+  useEffect(() => {
+    initAdMob().then(() => maybeShowAdOnOpen());
+  }, []);
 
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <Toaster />
-      </QueryClientProvider>
-    </AuthProvider>
+    <SettingsProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <Toaster />
+        </QueryClientProvider>
+      </AuthProvider>
+    </SettingsProvider>
   )
 }
 

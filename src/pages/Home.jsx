@@ -1,93 +1,237 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { PawPrint, Mic, FileText, Camera, Sparkles, LogIn, Eye } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { base44 } from '@/api/base44Client';
-
-const features = [
-  { icon: Mic, title: 'Talk or Type', desc: 'Ramble away — we\'ll organize it all for you' },
-  { icon: Camera, title: 'Add Photos', desc: 'Upload pics of pets, plants, house areas' },
-  { icon: Sparkles, title: 'AI Organizes', desc: 'We turn your notes into clear instructions' },
-  { icon: FileText, title: 'Download PDF', desc: 'Get a beautiful, printable instruction sheet' },
-];
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { Settings } from "lucide-react";
+import BillInput from "@/components/tip/BillInput";
+import SituationSelect from "@/components/tip/SituationSelect";
+import ServiceRating from "@/components/tip/ServiceRating";
+import ModeToggle from "@/components/tip/ModeToggle";
+import TipDisplay from "@/components/tip/TipDisplay";
+import VenueTier from "@/components/tip/VenueTier";
+import SettingsPanel from "@/components/tip/SettingsPanel";
+import InternationalInsight from "@/components/tip/InternationalInsight";
+import CurrencyToggle, { getCurrencyForCountry } from "@/components/tip/CurrencyToggle";
+import AdSlot from "@/components/AdSlot";
+import PullToRefresh from "@/components/PullToRefresh";
+import { computeTip } from "@/lib/tipScenarios";
+import { useSettings, BUDGET_MODE_MULT, getLocationAdj, getLocationLabel, getCountryAdj } from "@/lib/SettingsContext";
 
 export default function Home() {
-  const handleLogin = () => base44.auth.redirectToLogin();
+  const [bill, setBill] = useState("");
+  const [people, setPeople] = useState(1);
+  const [scenario, setScenario] = useState(null);
+  const [rating, setRating] = useState(3);
+  const [mode, setMode] = useState("rating"); // "rating" | "custom"
+  const [customPercent, setCustomPercent] = useState(18);
+  const [venueTier, setVenueTier] = useState("mid");
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [intlCalculatorOpen, setIntlCalculatorOpen] = useState(false);
+  const [useLocalCurrency, setUseLocalCurrency] = useState(false);
+
+  const { budgetMode, stateId, cityId, notInUS, country } = useSettings();
+  const calcRef = useRef(null);
+  const hasScrolledRef = useRef(false);
+
+  // Reset calculator when country changes
+  useEffect(() => {
+    setIntlCalculatorOpen(false);
+    setUseLocalCurrency(false);
+  }, [country]);
+
+  // Auto-scroll to calculator on first user scroll (resets on every page visit)
+  useEffect(() => {
+    hasScrolledRef.current = false;
+    const handleScroll = () => {
+      if (hasScrolledRef.current) return;
+      hasScrolledRef.current = true;
+      window.removeEventListener("scroll", handleScroll);
+      setTimeout(() => {
+        if (calcRef.current) {
+          const top = calcRef.current.getBoundingClientRect().top + window.scrollY - 16;
+          window.scrollTo({ top, behavior: "smooth" });
+        }
+      }, 150);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const billNum = parseFloat(bill) || 0;
+  const locationAdj = notInUS ? 0 : getLocationAdj(stateId, cityId);
+  const budgetMult = budgetMode ? BUDGET_MODE_MULT : 1;
+  const locationLabel = getLocationLabel(stateId, cityId);
+
+  const result = useMemo(
+    () =>
+      computeTip({
+        scenario,
+        bill: billNum,
+        rating,
+        mode,
+        customPercent,
+        people,
+        venueTier,
+        budgetMult,
+        locationAdj,
+      }),
+    [scenario, billNum, rating, mode, customPercent, people, venueTier, budgetMult, locationAdj]
+  );
+
+  const showResult = !notInUS && billNum > 0 && (mode === "custom" || scenario);
+
+  const handleRefresh = () => {
+    setScenario(null);
+    setBill("");
+    setPeople(1);
+    setRating(3);
+    setMode("rating");
+    setCustomPercent(18);
+    setVenueTier("mid");
+    return new Promise((r) => setTimeout(r, 600));
+  };
 
   return (
-    <div className="min-h-screen">
-      {/* Hero */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-secondary/30 to-accent/5" />
-        <div className="relative max-w-4xl mx-auto px-6 pt-16 pb-20 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+    <PullToRefresh onRefresh={handleRefresh}>
+    <div className="min-h-screen bg-background">
+      <div className="max-w-2xl mx-auto px-5 py-6 md:py-10" style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 24px)" }}>
+
+        {/* Settings button */}
+        <div className="flex justify-end mb-2">
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm text-muted-foreground hover:text-foreground hover:bg-secondary transition"
           >
-            <div className="inline-flex items-center gap-2 bg-primary/10 text-primary rounded-full px-4 py-1.5 text-sm font-medium mb-6">
-              <PawPrint className="w-4 h-4" />
-              Peace of mind while you're away
-            </div>
-            <h1 className="font-heading text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-tight">
-              Leave Perfect Instructions
-              <br />
-              <span className="text-primary">for Your Sitter</span>
-            </h1>
-            <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-              Just talk or type everything your sitter needs to know — feeding times, door codes, plant care, house rules, and more. We'll organize it into a beautiful PDF.
-            </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/create">
-                <Button size="lg" className="text-base px-8 py-6 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all">
-                  <PawPrint className="w-5 h-5 mr-2" />
-                  Create Your Sheet
-                </Button>
-              </Link>
-              <Link to="/example">
-                <Button size="lg" variant="outline" className="text-base px-8 py-6 rounded-xl">
-                  <Eye className="w-5 h-5 mr-2" />
-                  See an Example
-                </Button>
-              </Link>
-              <Button size="lg" variant="ghost" onClick={handleLogin} className="text-base px-8 py-6 rounded-xl">
-                <LogIn className="w-5 h-5 mr-2" />
-                Log In / Sign Up
-              </Button>
-            </div>
-          </motion.div>
+            <Settings className="w-4 h-4" />
+            Settings
+            {(budgetMode || locationLabel || notInUS) && (
+              <span className="ml-1 w-2 h-2 rounded-full bg-accent inline-block" />
+            )}
+          </button>
         </div>
-      </div>
 
-      {/* Features */}
-      <div className="max-w-5xl mx-auto px-6 py-16">
-        <h2 className="font-heading text-2xl md:text-3xl font-semibold text-center mb-12">
-          How It Works
-        </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * i, duration: 0.5 }}
-              className="bg-card rounded-2xl p-6 border border-border/60 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
-                <f.icon className="w-6 h-6 text-primary" />
+        <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+
+        {/* Header */}
+        <header className="text-center mb-6">
+          <div className="inline-block text-[10px] uppercase tracking-[0.3em] text-accent font-semibold mb-4">
+            TipHelper
+          </div>
+          <h1 className="font-serif text-5xl md:text-6xl leading-[1.05] tracking-tight">
+            {notInUS && country.trim() ? (
+              <>Tipping in<br /><span className="italic text-accent">{country.trim()}</span></>
+            ) : (
+              <>How much<br /><span className="italic text-accent">should you tip?</span></>
+            )}
+          </h1>
+          <p className="mt-5 text-muted-foreground max-w-md mx-auto">
+            {notInUS
+              ? "Tipping customs vary wildly around the world — here's what you need to know."
+              : "Research-backed tipping guidance for every situation — from sit-down dinners to lawn care."}
+          </p>
+          {(budgetMode || (!notInUS && locationLabel)) && (
+            <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+              {budgetMode && (
+                <span className="inline-flex items-center gap-1 text-xs bg-accent/15 text-accent rounded-full px-3 py-1 font-medium">
+                  Budget Mode on
+                </span>
+              )}
+              {!notInUS && locationLabel && (
+                <span className="inline-flex items-center gap-1 text-xs bg-secondary text-muted-foreground rounded-full px-3 py-1">
+                  📍 {locationLabel}
+                </span>
+              )}
+            </div>
+          )}
+        </header>
+
+        {notInUS ? (
+          /* International mode */
+          <div className="mt-2" ref={calcRef}>
+            {country.trim() ? (
+              <>
+                <InternationalInsight
+                  country={country}
+                  onReadyToCalculate={() => setIntlCalculatorOpen(true)}
+                />
+                {intlCalculatorOpen && (
+                  <div className="bg-card border border-border rounded-2xl p-6 md:p-8 space-y-7 shadow-sm">
+                    <CurrencyToggle
+                      country={country}
+                      useLocalCurrency={useLocalCurrency}
+                      setUseLocalCurrency={setUseLocalCurrency}
+                    />
+                    <BillInput bill={bill} setBill={setBill} people={people} setPeople={setPeople} />
+                    <SituationSelect selected={scenario} onSelect={setScenario} locationAdj={locationAdj} />
+                    <ModeToggle mode={mode} setMode={setMode} customPercent={customPercent} setCustomPercent={setCustomPercent} />
+                    {mode === "rating" && scenario?.venueAware && (
+                      <VenueTier venueTier={venueTier} setVenueTier={setVenueTier} />
+                    )}
+                    {mode === "rating" && scenario && (
+                      <ServiceRating rating={rating} setRating={setRating} />
+                    )}
+                    <div className="mt-2">
+                      {billNum > 0 && (mode === "custom" || scenario) ? (
+                        <TipDisplay
+                          result={result}
+                          scenario={scenario}
+                          people={people}
+                          localCurrency={useLocalCurrency ? getCurrencyForCountry(country) : null}
+                        />
+                      ) : (
+                        <div className="text-center text-sm text-muted-foreground py-4">
+                          Enter a bill amount{mode === "rating" && " and pick a situation"} to see your tip.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-center text-sm text-muted-foreground py-8 bg-card border border-border rounded-2xl">
+                Enter your country in Settings to get local tipping culture and customs.
               </div>
-              <h3 className="font-heading text-lg font-semibold mb-2">{f.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+            )}
+          </div>
+        ) : (
+          <>
+            {/* Card */}
+            <div ref={calcRef} className="bg-card border border-border rounded-2xl p-6 md:p-8 space-y-7 shadow-sm">
+              <BillInput bill={bill} setBill={setBill} people={people} setPeople={setPeople} />
+              <SituationSelect selected={scenario} onSelect={setScenario} locationAdj={locationAdj} />
+              <ModeToggle mode={mode} setMode={setMode} customPercent={customPercent} setCustomPercent={setCustomPercent} />
+              {mode === "rating" && scenario?.venueAware && (
+                <VenueTier venueTier={venueTier} setVenueTier={setVenueTier} />
+              )}
+              {mode === "rating" && scenario && (
+                <ServiceRating rating={rating} setRating={setRating} />
+              )}
+            </div>
 
-      {/* Footer */}
-      <div className="text-center py-10 text-sm text-muted-foreground border-t border-border/50">
-        Made with love for pet & home owners everywhere 🐾
+            {/* Result */}
+            <div className="mt-3">
+              {showResult ? (
+                <TipDisplay result={result} scenario={scenario} people={people} />
+              ) : (
+                <div className="text-center text-sm text-muted-foreground py-2">
+                  Enter a bill amount{mode === "rating" && " and pick a situation"} to see your tip.
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        <footer className="mt-2 text-center text-xs text-muted-foreground space-y-0.5">
+          {notInUS ? (
+            <>
+              <p>Tipping customs sourced from cultural research.</p>
+              <p className="text-muted-foreground/60">Responses generated by AI — always use your own judgment.</p>
+            </>
+          ) : (
+            <p>Guidelines based on standard US tipping customs. Adjust to taste.</p>
+          )}
+        </footer>
+
+        <AdSlot className="mt-3" />
       </div>
     </div>
+    </PullToRefresh>
   );
 }
