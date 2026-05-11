@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.sitterhandbook.android',
+  appId: 'com.mediocreatbest.sitterhandbook',
   appName: 'SitterHandbook',
   webDir: 'dist',
   server: {
