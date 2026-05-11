@@ -5,12 +5,12 @@ const config: CapacitorConfig = {
   appName: 'SitterHandbook',
   webDir: 'dist',
   server: {
-    url: 'https://sitterhandbook.com',
+    url: 'https://paws-port-00644a1d.base44.app',
     cleartext: false,
     androidScheme: 'https',
     allowNavigation: [
-      '*.sitterhandbook.com',
-      'sitterhandbook.com',
+      'paws-port-00644a1d.base44.app',
+      '*.base44.app',
       'accounts.google.com',
       '*.google.com',
     ],
