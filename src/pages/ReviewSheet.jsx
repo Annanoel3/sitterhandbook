@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Download, ArrowLeft, Phone, Home, PawPrint, UtensilsCrossed, Pill, Footprints, Heart, Flower2, Fish, Bird, Trash2, AlertTriangle, StickyNote, User, UserCheck, DollarSign, Lock } from 'lucide-react';
+import { Loader2, Download, ArrowLeft, Phone, Home, PawPrint, UtensilsCrossed, Pill, Footprints, Heart, Flower2, Fish, Bird, Trash2, AlertTriangle, StickyNote, User, UserCheck, DollarSign, Lock, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AiChecklist from '../components/review/AiChecklist';
 import DraggableSections from '../components/review/DraggableSections';
@@ -388,6 +388,12 @@ export default function ReviewSheet() {
           <Link to="/create" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to editor
           </Link>
+          {isLoggedIn && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-secondary/60 border border-border/50 rounded-lg px-3 py-2 mb-4">
+              <FileText className="w-3.5 h-3.5 shrink-0" />
+              <span>This sheet is saved — you can come back to it anytime from <Link to="/sheets" className="underline underline-offset-2 hover:text-foreground font-medium">My Sheets</Link>.</span>
+            </div>
+          )}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="font-heading text-3xl font-bold">{sheet.title}</h1>
