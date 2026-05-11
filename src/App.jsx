@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -11,8 +11,20 @@ import { SettingsProvider } from '@/lib/SettingsContext';
 import { initAdMob, maybeShowAdOnOpen } from '@/lib/admob';
 import { useEffect } from 'react';
 
+const PUBLIC_ROUTES = ['/privacy'];
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const location = useLocation();
+
+  // Allow public routes without auth
+  if (PUBLIC_ROUTES.includes(location.pathname)) {
+    return (
+      <Routes>
+        <Route path="/privacy" element={<Privacy />} />
+      </Routes>
+    );
+  }
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
