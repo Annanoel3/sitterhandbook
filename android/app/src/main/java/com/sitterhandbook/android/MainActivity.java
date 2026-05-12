@@ -4,10 +4,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Message;
 import android.webkit.ConsoleMessage;
+import android.webkit.CookieManager;
 import android.webkit.PermissionRequest;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebStorage;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.net.Uri;
@@ -52,6 +54,15 @@ public class MainActivity extends BridgeActivity {
 
     private void setupInAppNavigation() {
         WebView webView = getBridge().getWebView();
+
+        // --- Cache Clearing Start ---
+        // Force clear cache and storage to resolve "old domain content" issues
+        webView.clearCache(true);
+        WebStorage.getInstance().deleteAllData();
+        CookieManager.getInstance().removeAllCookies(null);
+        CookieManager.getInstance().flush();
+        Log.d(TAG, "WebView cache and storage cleared");
+        // --- Cache Clearing End ---
 
         // Remove "; wv" so Google doesn't block OAuth via "disallowed_useragent"
         String ua = webView.getSettings().getUserAgentString();
