@@ -5,11 +5,14 @@ import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-route
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import Home from '@/pages/Home';
 import Privacy from '@/pages/Privacy';
-import { SettingsProvider } from '@/lib/SettingsContext';
-import { initAdMob, maybeShowAdOnOpen } from '@/lib/admob';
-import { useEffect } from 'react';
+import MySheets from '@/pages/MySheets';
+import CreateSheet from '@/pages/CreateSheet';
+import ReviewSheet from '@/pages/ReviewSheet';
+import HouseholdInfo from '@/pages/HouseholdInfo';
+import Settings from '@/pages/Settings';
+import ExampleSheet from '@/pages/ExampleSheet';
+import AppLayout from '@/components/layout/AppLayout';
 
 const PUBLIC_ROUTES = ['/privacy'];
 
@@ -46,40 +49,35 @@ const AuthenticatedApp = () => {
     }
   }
 
-  // Render the main app
+  // Render the main app — all SitterHandbook pages under AppLayout (Navbar)
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="*" element={<PageNotFound />} />
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<MySheets />} />
+        <Route path="/sheets" element={<MySheets />} />
+        <Route path="/create" element={<CreateSheet />} />
+        <Route path="/review" element={<ReviewSheet />} />
+        <Route path="/household" element={<HouseholdInfo />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/example" element={<ExampleSheet />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Route>
     </Routes>
   );
 };
 
 
 function App() {
-  useEffect(() => {
-    // Track app opens and suppress ads on first launch
-    const appOpenCount = parseInt(localStorage.getItem('app_open_count') || '0') + 1;
-    localStorage.setItem('app_open_count', String(appOpenCount));
-
-    // Only initialize ads if not first launch
-    if (appOpenCount >= 2) {
-      initAdMob().then(() => maybeShowAdOnOpen());
-    }
-  }, []);
-
   return (
-    <SettingsProvider>
-      <AuthProvider>
-        <QueryClientProvider client={queryClientInstance}>
-          <Router>
-            <AuthenticatedApp />
-          </Router>
-          <Toaster />
-        </QueryClientProvider>
-      </AuthProvider>
-    </SettingsProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <AuthenticatedApp />
+        </Router>
+        <Toaster />
+      </QueryClientProvider>
+    </AuthProvider>
   )
 }
 
