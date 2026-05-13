@@ -1,4 +1,4 @@
-package com.sitterhandbook.android;
+package com.mediocreatbest.sitterhandbook;
 
 import android.app.Application;
 

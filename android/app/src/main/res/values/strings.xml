@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">SitterHandbook</string>
     <string name="title_activity_main">SitterHandbook</string>
-    <string name="package_name">com.sitterhandbook.android</string>
-    <string name="custom_url_scheme">com.sitterhandbook.android</string>
+    <string name="package_name">com.mediocreatbest.sitterhandbook</string>
+    <string name="custom_url_scheme">com.mediocreatbest.sitterhandbook</string>
 </resources>
