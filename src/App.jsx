@@ -13,6 +13,7 @@ import HouseholdInfo from '@/pages/HouseholdInfo';
 import Settings from '@/pages/Settings';
 import ExampleSheet from '@/pages/ExampleSheet';
 import AppLayout from '@/components/layout/AppLayout';
+import HomePage from '@/pages/HomePage';
 
 const PUBLIC_ROUTES = ['/privacy'];
 
@@ -53,7 +54,7 @@ const AuthenticatedApp = () => {
   return (
     <Routes>
       <Route element={<AppLayout />}>
-        <Route path="/" element={<MySheets />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/sheets" element={<MySheets />} />
         <Route path="/create" element={<CreateSheet />} />
         <Route path="/review" element={<ReviewSheet />} />

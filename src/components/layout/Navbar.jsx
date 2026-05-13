@@ -13,6 +13,9 @@ export default function Navbar() {
     { to: '/settings', label: 'Settings', icon: Settings },
   ];
 
+  // Mark "/" active only on exact match so other routes don't highlight it
+  const isActive = (to) => to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
+
   return (
     <nav className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border/50">
       <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
@@ -24,13 +27,13 @@ export default function Navbar() {
         </Link>
         <div className="flex items-center gap-1">
           {links.map(link => {
-            const isActive = location.pathname === link.to;
+            const active = isActive(link.to);
             return (
               <Link
                 key={link.to}
                 to={link.to}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
+                  active
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
