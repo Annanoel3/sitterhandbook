@@ -139,7 +139,7 @@ export default function HouseholdInfoPage() {
                   {pets.length > 1 && (
                      <button
                        onClick={() => removePet(i)}
-                       className="absolute top-2 right-2 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                       className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                      >
                        <Trash2 className="w-4 h-4" />
                      </button>
