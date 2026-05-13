@@ -135,7 +135,7 @@ export default function HouseholdInfoPage() {
             </CardHeader>
             <CardContent className="space-y-6">
               {pets.map((pet, i) => (
-                <div key={i} className="relative border border-border/50 rounded-xl p-4 space-y-3">
+                <div key={i} className="border border-border/50 rounded-xl p-4 space-y-3" style={{ position: 'relative' }}>
                   {pets.length > 1 && (
                      <button
                        onClick={() => removePet(i)}
