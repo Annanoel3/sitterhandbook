@@ -139,10 +139,17 @@ export default function HouseholdInfoPage() {
                   {pets.length > 1 && (
                      <button
                        onClick={() => removePet(i)}
-                       className="absolute top-2 right-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                       style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', margin: '0', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                       style={{ position: 'absolute', top: '8px', right: '8px', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', margin: '0', border: 'none', background: 'transparent', cursor: 'pointer' }}
+                       onMouseEnter={(e) => {
+                         e.currentTarget.style.color = 'hsl(0, 72%, 51%)';
+                         e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                       }}
+                       onMouseLeave={(e) => {
+                         e.currentTarget.style.color = 'hsl(30, 8%, 42%)';
+                         e.currentTarget.style.backgroundColor = 'transparent';
+                       }}
                      >
-                       <Trash2 style={{ width: '16px', height: '16px', flexShrink: 0 }} />
+                       <Trash2 style={{ width: '16px', height: '16px', flexShrink: 0, pointerEvents: 'none' }} />
                      </button>
                    )}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
