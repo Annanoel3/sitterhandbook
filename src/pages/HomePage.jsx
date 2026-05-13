@@ -63,7 +63,7 @@ export default function HomePage() {
             <PawPrint className="w-8 h-8 text-primary-foreground" />
           </div>
           <h1 className="font-serif text-4xl font-bold mb-2">SitterHandbook</h1>
-          <p className="text-muted-foreground">Your pet sitting instructions, organized.</p>
+          <p className="text-muted-foreground">Your pet/home sitting instructions, organized.</p>
         </motion.div>
 
         {/* Upcoming Vacations */}
