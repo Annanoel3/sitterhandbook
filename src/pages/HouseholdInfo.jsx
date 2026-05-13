@@ -139,10 +139,10 @@ export default function HouseholdInfoPage() {
                   {pets.length > 1 && (
                      <button
                        onClick={() => removePet(i)}
-                       className="absolute top-2 right-2 w-8 h-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                       style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, lineHeight: 1 }}
+                       className="absolute top-2 right-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                       style={{ width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0', margin: '0', border: 'none', background: 'transparent', cursor: 'pointer' }}
                      >
-                       <Trash2 className="w-4 h-4" />
+                       <Trash2 style={{ width: '16px', height: '16px', flexShrink: 0 }} />
                      </button>
                    )}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
