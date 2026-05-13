@@ -58,7 +58,7 @@ export default function HomePage() {
       <div className="max-w-3xl mx-auto px-6 py-10 space-y-10">
 
         {/* Hero */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-4">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-4">
           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/20">
             <PawPrint className="w-8 h-8 text-primary-foreground" />
           </div>
@@ -67,7 +67,7 @@ export default function HomePage() {
         </motion.div>
 
         {/* Upcoming Vacations */}
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <CalendarDays className="w-5 h-5 text-accent" />
@@ -91,7 +91,7 @@ export default function HomePage() {
           ) : (
             <div className="space-y-3">
               {upcomingVacations.map((v, i) => (
-                <motion.div key={v.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+                <motion.div key={v.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}>
                   <Card
                     className="hover:shadow-md transition-shadow cursor-pointer border-border/60 group"
                     onClick={() => handleVacationClick(v)}
@@ -153,7 +153,7 @@ export default function HomePage() {
         </motion.section>
 
         {/* Household Overview */}
-        <motion.section initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+        <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Home className="w-5 h-5 text-accent" />
