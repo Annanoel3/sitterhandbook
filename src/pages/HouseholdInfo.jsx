@@ -137,13 +137,13 @@ export default function HouseholdInfoPage() {
               {pets.map((pet, i) => (
                 <div key={i} className="relative border border-border/50 rounded-xl p-4 space-y-3">
                   {pets.length > 1 && (
-                    <button
-                      onClick={() => removePet(i)}
-                      className="absolute top-3 right-3 text-muted-foreground hover:text-destructive transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                     <button
+                       onClick={() => removePet(i)}
+                       className="absolute top-2 right-2 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                     >
+                       <Trash2 className="w-4 h-4" />
+                     </button>
+                   )}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
                       <Label className="text-xs mb-1 block">Name *</Label>
