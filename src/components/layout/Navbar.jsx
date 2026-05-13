@@ -32,13 +32,13 @@ export default function Navbar() {
               <Link
                 key={link.to}
                 to={link.to}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   active
                     ? 'bg-primary/10 text-primary'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted'
                 }`}
               >
-                <link.icon className="w-4 h-4" />
+                <link.icon className="w-5 h-5" />
                 <span className="hidden sm:inline">{link.label}</span>
               </Link>
             );
