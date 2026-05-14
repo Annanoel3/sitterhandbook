@@ -1,6 +1,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { PawPrint, FileText, Plus, Settings, BookOpen } from 'lucide-react';
+import { PawPrint, FileText, Plus, Settings, BookOpen, Menu } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 
 export default function Navbar() {
   const location = useLocation();
@@ -23,9 +25,10 @@ export default function Navbar() {
           <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
             <PawPrint className="w-4 h-4 text-primary-foreground" />
           </div>
-          <span className="font-heading font-semibold text-lg hidden sm:block">SitterHandbook</span>
+          <span className="font-heading font-semibold text-lg">SitterHandbook</span>
         </Link>
-        <div className="flex items-center gap-1">
+        {/* Desktop Nav */}
+        <div className="hidden md:flex items-center gap-1">
           {links.map(link => {
             const active = isActive(link.to);
             return (
@@ -39,10 +42,47 @@ export default function Navbar() {
                 }`}
               >
                 <link.icon className="w-5 h-5" />
-                <span className="hidden sm:inline">{link.label}</span>
+                <span>{link.label}</span>
               </Link>
             );
           })}
+        </div>
+
+        {/* Mobile/Tablet Hamburger Menu */}
+        <div className="md:hidden">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Open navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[250px] sm:w-[300px] flex flex-col pt-12">
+              <Link to="/" className="flex items-center gap-2 mb-6">
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                  <PawPrint className="w-4 h-4 text-primary-foreground" />
+                </div>
+                <span className="font-heading font-semibold text-lg">SitterHandbook</span>
+              </Link>
+              <nav className="flex flex-col gap-2">
+                {links.map(link => (
+                  <SheetClose asChild key={link.to}>
+                    <Link
+                      to={link.to}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
+                        isActive(link.to)
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      <link.icon className="w-5 h-5" />
+                      <span>{link.label}</span>
+                    </Link>
+                  </SheetClose>
+                ))}
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </nav>
