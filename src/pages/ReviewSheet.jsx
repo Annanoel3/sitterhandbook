@@ -186,18 +186,18 @@ export default function ReviewSheet() {
     doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(210, 190, 240);
-    doc.textWithLink('Made with SitterHandbook • sitterhandbook.com', pageWidth / 2, 36, { align: 'center', url: 'https://sitterhandbook.com' });
+    doc.textWithLink('Made with SitterHandbook • sitterhandbook.com', pageWidth / 2, 36, { align: 'center', url: 'https://paws-port-00644a1d.base44.app' });
 
     if (pay) {
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(pageWidth / 2 - 28, 30, 56, 7, 2, 2, 'F');
+      doc.roundedRect(pageWidth / 2 - 28, 38, 56, 7, 2, 2, 'F');
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(112, 80, 181);
-      doc.text(`Agreed Rate: ${pay}`, pageWidth / 2, 35, { align: 'center' });
+      doc.text(`Agreed Rate: ${pay}`, pageWidth / 2, 43, { align: 'center' });
     }
 
-    y = 46;
+    y = 54;
 
     // Extract pet names from pets_overview for auto-bolding
     const petNames = [];
