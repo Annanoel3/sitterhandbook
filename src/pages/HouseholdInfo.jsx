@@ -52,6 +52,13 @@ export default function HouseholdInfoPage() {
 
   const handleSave = async () => {
     setSaving(true);
+    const incompletePets = pets.filter(p => !p.name.trim() && (p.feeding?.trim() || p.medical?.trim() || p.quirks?.trim()));
+    if (incompletePets.length > 0) {
+      alert('Please enter a name for each pet with notes.');
+      setSaving(false);
+      return;
+    }
+    
     const data = {
       owner_name: ownerName,
       owner_phone: ownerPhone,
@@ -155,7 +162,7 @@ export default function HouseholdInfoPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div>
                       <Label className="text-xs mb-1 block">Name *</Label>
-                      <Input value={pet.name} onChange={e => updatePet(i, 'name', e.target.value)} placeholder="e.g. Biscuit" className="rounded-lg" />
+                      <Input value={pet.name} onChange={e => updatePet(i, 'name', e.target.value)} placeholder="e.g. Biscuit" className="rounded-lg" required />
                     </div>
                     <div>
                       <Label className="text-xs mb-1 block">Species</Label>
