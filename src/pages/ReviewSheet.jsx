@@ -119,6 +119,14 @@ export default function ReviewSheet() {
   const handleDownloadPDF = async () => {
     setGenerating(true);
 
+    let isNative = false;
+    try {
+      const { Capacitor, registerPlugin } = await import('@capacitor/core');
+      isNative = Capacitor.isNativePlatform();
+    } catch {
+      isNative = false;
+    }
+
     const { jsPDF } = await import('jspdf');
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
 
@@ -337,9 +345,30 @@ export default function ReviewSheet() {
     }
 
     const fileName = `${(sheet.title || 'pet-sitter-instructions').replace(/\s+/g, '-').toLowerCase()}.pdf`;
-    doc.save(fileName);
+
+    if (isNative) {
+      try {
+        const { Filesystem, Directory } = await import('@capacitor/filesystem');
+        const pdfBlob = doc.output('blob');
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64 = reader.result.split(',')[1];
+          await Filesystem.writeFile({
+            path: fileName,
+            data: base64,
+            directory: Directory.Documents,
+          });
+        };
+        reader.readAsDataURL(pdfBlob);
+      } catch (e) {
+        console.error('Native PDF save failed:', e);
+      }
+    } else {
+      doc.save(fileName);
+    }
+
     setGenerating(false);
-  };
+    };
 
   if (loading) {
     return (
