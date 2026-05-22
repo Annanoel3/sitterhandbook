@@ -4,7 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Moon, Sun, Shield, MessageSquare, Code2, Mail, Loader2, CheckCircle2 } from 'lucide-react';
+import { Moon, Sun, Shield, MessageSquare, Code2, Mail, Loader2, CheckCircle2, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
 
@@ -115,6 +115,41 @@ export default function Settings() {
             <CardContent className="text-sm text-muted-foreground space-y-2">
               <p>SitterHandbook was created by <span className="font-semibold text-foreground">MediocreAtBestDev</span>.</p>
               <p>All intellectual property, including the design, code, and brand, is owned by <span className="font-semibold text-foreground">MediocreAtBestDev</span>. All rights reserved.</p>
+            </CardContent>
+          </Card>
+
+          {/* Data Deletion */}
+          <Card className="border-border/60 mb-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="font-heading text-lg flex items-center gap-2">
+                <Trash2 className="w-5 h-5" />
+                Data & Deletion Requests
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">You can request deletion of some or all of your data at any time. We'll process your request within 7 days.</p>
+              <div className="space-y-3">
+                <div className="border border-border/60 rounded-xl p-4 space-y-2">
+                  <p className="text-sm font-medium">Delete specific data</p>
+                  <p className="text-xs text-muted-foreground">Request deletion of specific data (e.g. household info, instruction sheets, photos) while keeping your account.</p>
+                  <a
+                    href="mailto:mediocreatbestdev@outlook.com?subject=Data%20Deletion%20Request&body=Hi%2C%20I%20would%20like%20to%20request%20deletion%20of%20the%20following%20data%20from%20my%20SitterHandbook%20account%3A%0A%0A(Please%20describe%20what%20you%27d%20like%20deleted)%0A%0AMy%20account%20email%3A%20"
+                    className="inline-flex items-center gap-1.5 text-sm text-primary hover:underline font-medium"
+                  >
+                    <Mail className="w-3.5 h-3.5" /> Request data deletion
+                  </a>
+                </div>
+                <div className="border border-destructive/30 rounded-xl p-4 space-y-2 bg-destructive/5">
+                  <p className="text-sm font-medium text-destructive">Delete my account</p>
+                  <p className="text-xs text-muted-foreground">Request full deletion of your account and all associated data. This action is permanent and cannot be undone.</p>
+                  <a
+                    href="mailto:mediocreatbestdev@outlook.com?subject=Account%20Deletion%20Request&body=Hi%2C%20I%20would%20like%20to%20permanently%20delete%20my%20SitterHandbook%20account%20and%20all%20associated%20data.%0A%0AMy%20account%20email%3A%20"
+                    className="inline-flex items-center gap-1.5 text-sm text-destructive hover:underline font-medium"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Request account deletion
+                  </a>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
