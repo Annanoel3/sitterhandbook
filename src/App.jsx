@@ -14,6 +14,7 @@ import Settings from '@/pages/Settings';
 import ExampleSheet from '@/pages/ExampleSheet';
 import AppLayout from '@/components/layout/AppLayout';
 import HomePage from '@/pages/HomePage';
+import DataPrivacy from '@/pages/DataPrivacy';
 
 const PUBLIC_ROUTES = ['/privacy'];
 
@@ -62,6 +63,7 @@ const AuthenticatedApp = () => {
         <Route path="/settings" element={<Settings />} />
         <Route path="/example" element={<ExampleSheet />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/data-privacy" element={<DataPrivacy />} />
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>
