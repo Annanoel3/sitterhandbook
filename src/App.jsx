@@ -16,6 +16,15 @@ import AppLayout from '@/components/layout/AppLayout';
 import HomePage from '@/pages/HomePage';
 import DataPrivacy from '@/pages/DataPrivacy';
 
+// Sentry loaded via CDN in index.html
+const Sentry = window.Sentry;
+if (Sentry) {
+  Sentry.init({
+    dsn: "https://882b4f0fae2f9fd633c2ce47a3308af5@o4511434142580736.ingest.us.sentry.io/4511434167287808",
+    environment: "production",
+  });
+}
+
 const PUBLIC_ROUTES = ['/privacy'];
 
 const AuthenticatedApp = () => {
