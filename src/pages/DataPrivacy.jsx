@@ -1,10 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Trash2, Mail, Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowLeft, Trash2, Shield, Loader2, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { base44 } from '@/api/base44Client';
 
 export default function DataPrivacy() {
+  const [dataRequest, setDataRequest] = useState('');
+  const [accountRequest, setAccountRequest] = useState('');
+  const [sendingData, setSendingData] = useState(false);
+  const [sendingAccount, setSendingAccount] = useState(false);
+  const [sentData, setSentData] = useState(false);
+  const [sentAccount, setSentAccount] = useState(false);
+
+  const handleDataRequest = async () => {
+    if (!dataRequest.trim()) return;
+    setSendingData(true);
+    await base44.functions.invoke('sendFeedback', { message: `[DATA DELETION REQUEST] ${dataRequest}` });
+    setSentData(true);
+    setDataRequest('');
+    setSendingData(false);
+  };
+
+  const handleAccountRequest = async () => {
+    if (!accountRequest.trim()) return;
+    setSendingAccount(true);
+    await base44.functions.invoke('sendFeedback', { message: `[ACCOUNT DELETION REQUEST] ${accountRequest}` });
+    setSentAccount(true);
+    setAccountRequest('');
+    setSendingAccount(false);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-2xl mx-auto px-6 py-10">
@@ -31,24 +59,29 @@ export default function DataPrivacy() {
             {/* Specific data deletion */}
             <Card className="border-border/60">
               <CardHeader className="pb-3">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-primary" />
-                  Delete Specific Data
-                </CardTitle>
+                <CardTitle className="text-base">Delete Specific Data</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Request deletion of specific data — such as your household info, instruction sheets, or uploaded photos — while keeping your account active.
+                  Request deletion of specific data — such as your instruction sheets, household info, or uploaded photos — while keeping your account active.
                 </p>
-                <p className="text-xs text-muted-foreground bg-muted rounded-lg px-3 py-2">
-                  Examples: "Please delete all my instruction sheets" or "Please delete my household info and photos."
-                </p>
-                <a
-                  href="mailto:mediocreatbestdev@outlook.com?subject=Data%20Deletion%20Request&body=Hi%2C%20I%20would%20like%20to%20request%20deletion%20of%20the%20following%20data%20from%20my%20SitterHandbook%20account%3A%0A%0A(Please%20describe%20what%20you%27d%20like%20deleted)%0A%0AMy%20account%20email%3A%20"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline"
-                >
-                  <Mail className="w-4 h-4" /> Send data deletion request
-                </a>
+                {sentData ? (
+                  <div className="flex items-center gap-2 text-primary text-sm font-medium">
+                    <CheckCircle2 className="w-4 h-4" /> Request received! We'll process it within 7 days.
+                  </div>
+                ) : (
+                  <>
+                    <Textarea
+                      placeholder="Describe what you'd like deleted, e.g. 'Please delete all my instruction sheets and photos.'"
+                      value={dataRequest}
+                      onChange={(e) => setDataRequest(e.target.value)}
+                      className="min-h-[90px] rounded-xl resize-none"
+                    />
+                    <Button onClick={handleDataRequest} disabled={!dataRequest.trim() || sendingData} className="rounded-xl">
+                      {sendingData ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : 'Send Request'}
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -62,23 +95,32 @@ export default function DataPrivacy() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  Request permanent deletion of your account and <strong>all</strong> associated data, including instruction sheets, household info, photos, and trips. This cannot be undone.
+                  Request permanent deletion of your account and <strong>all</strong> associated data. This cannot be undone.
                 </p>
-                <a
-                  href="mailto:mediocreatbestdev@outlook.com?subject=Account%20Deletion%20Request&body=Hi%2C%20I%20would%20like%20to%20permanently%20delete%20my%20SitterHandbook%20account%20and%20all%20associated%20data.%0A%0AMy%20account%20email%3A%20"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-destructive hover:underline"
-                >
-                  <Trash2 className="w-4 h-4" /> Send account deletion request
-                </a>
+                {sentAccount ? (
+                  <div className="flex items-center gap-2 text-primary text-sm font-medium">
+                    <CheckCircle2 className="w-4 h-4" /> Request received! We'll process it within 7 days.
+                  </div>
+                ) : (
+                  <>
+                    <Textarea
+                      placeholder="Confirm your request, e.g. 'Please permanently delete my account and all my data.'"
+                      value={accountRequest}
+                      onChange={(e) => setAccountRequest(e.target.value)}
+                      className="min-h-[90px] rounded-xl resize-none"
+                    />
+                    <Button
+                      variant="destructive"
+                      onClick={handleAccountRequest}
+                      disabled={!accountRequest.trim() || sendingAccount}
+                      className="rounded-xl"
+                    >
+                      {sendingAccount ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Sending...</> : 'Send Deletion Request'}
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
-
-            <p className="text-xs text-muted-foreground pt-2">
-              Need help? You can also reach us directly at{' '}
-              <a href="mailto:mediocreatbestdev@outlook.com" className="underline hover:text-foreground">
-                mediocreatbestdev@outlook.com
-              </a>
-            </p>
           </div>
         </motion.div>
       </div>
