@@ -48,8 +48,8 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Mobile/Tablet Hamburger Menu */}
-        <div className="md:hidden">
+        {/* Hamburger Menu */}
+        <div>
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
