@@ -14,6 +14,7 @@
   "dependencies": {
     "@base44/sdk": "^0.8.30",
     "@base44/vite-plugin": "^1.0.20",
+    "@capacitor-community/admob": "^6.2.0",
     "@capacitor/android": "^8.3.2",
     "@capacitor/cli": "^8.3.2",
     "@capacitor/core": "^8.3.2",
