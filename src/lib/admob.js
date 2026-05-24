@@ -5,12 +5,13 @@ const AD_DELAY_MS = 15000;
 let AdMob = null;
 let isNative = false;
 
-async function loadCapacitor() {
+async function loadAdMob() {
   try {
-    const { Capacitor, registerPlugin } = await import('@capacitor/core');
+    const { Capacitor } = await import('@capacitor/core');
     isNative = Capacitor.isNativePlatform();
     if (isNative) {
-      AdMob = registerPlugin('AdMob');
+      const mod = await import('@capacitor-community/admob');
+      AdMob = mod.AdMob;
     }
   } catch {
     // Not a native environment, ignore
@@ -18,7 +19,7 @@ async function loadCapacitor() {
 }
 
 export async function initAdMob() {
-  await loadCapacitor();
+  await loadAdMob();
   if (!isNative || !AdMob) return;
   try {
     await AdMob.initialize({ initializeForTesting: false });
@@ -56,12 +57,11 @@ export async function maybeShowAdOnOpen() {
 
   if (count % SHOW_EVERY_N_OPENS === 0) {
     await new Promise(resolve => setTimeout(resolve, AD_DELAY_MS));
-    
-    // Check if user is typing; if so, wait for them to finish
+
     while (isUserTyping()) {
       await new Promise(resolve => setTimeout(resolve, 500));
     }
-    
+
     await showInterstitialAd();
   }
 }
