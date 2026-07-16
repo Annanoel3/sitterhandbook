@@ -348,18 +348,20 @@ export default function ReviewSheet() {
 
     if (isNative) {
       try {
-        const { Filesystem, Directory } = await import('@capacitor/filesystem');
         const pdfBlob = doc.output('blob');
-        const reader = new FileReader();
-        reader.onloadend = async () => {
-          const base64 = reader.result.split(',')[1];
-          await Filesystem.writeFile({
+        const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: sheet.title || 'Pet Sitter Instructions' });
+        } else {
+          const { Filesystem, Directory } = await import('@capacitor/filesystem');
+          const base64 = doc.output('datauristring').split(',')[1];
+          const result = await Filesystem.writeFile({
             path: fileName,
             data: base64,
-            directory: Directory.Documents,
+            directory: Directory.Cache,
           });
-        };
-        reader.readAsDataURL(pdfBlob);
+          window.open(result.uri, '_blank');
+        }
       } catch (e) {
         console.error('Native PDF save failed:', e);
       }
