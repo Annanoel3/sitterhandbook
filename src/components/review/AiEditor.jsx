@@ -70,16 +70,22 @@ export default function AiEditor({ sheetId, data, onUpdated }) {
       model: "claude_sonnet_4_6",
       prompt: `You are editing a pet/house sitting instruction sheet based on the owner's requested changes.
 
-CURRENT INSTRUCTION SHEET CONTENT:
+CURRENT INSTRUCTION SHEET CONTENT (section_key: content):
 ${currentSections}
 
 OWNER'S REQUESTED CHANGES:
 ${instruction}
 
-Apply the requested changes carefully. You may add new information, remove information, or modify existing details as requested. Do not change anything that was not mentioned in the requested changes. Preserve all existing bullet point formatting using "• " prefix. Write all content in second person, directly addressing the sitter as "you" — never refer to the owner or sitter in third person.
+Apply the requested changes carefully. You may ADD new information, MODIFY existing details, or REMOVE content and entire sections as requested. When the owner asks to remove or delete something — including anything involving a particular person, topic, or activity — actually remove it. Do not leave removed content in place, and do not refuse a removal request.
 
-Return ONLY a valid JSON object (no markdown, no code fences) with the same section keys as above, updated to reflect the changes. Only include sections that have content. Example:
-{"pets_overview":"...","feeding_schedule":"...",...}`,
+Return ONLY a valid JSON object (no markdown, no code fences) containing the COMPLETE final version of the sheet. Rules:
+- Include EVERY section key shown above, even sections you did not change (copy them verbatim).
+- To DELETE a section entirely, set its value to an empty string "".
+- To remove specific content within a section, return that section with only the removed parts taken out.
+- Preserve all existing "• " bullet formatting.
+- Write in second person, directly addressing the reader as "you".
+
+Example: {"pets_overview":"• Max — golden retriever...","feeding_schedule":"",...}`,
     });
 
     let rawStr = result;
@@ -90,10 +96,14 @@ Return ONLY a valid JSON object (no markdown, no code fences) with the same sect
     let aiData = {};
     try { aiData = JSON.parse(rawStr); } catch { aiData = {}; }
 
-    const updatedData = {
-      ...data,
-      ...aiData,
-    };
+    const updatedData = { ...data };
+    for (const [k, v] of Object.entries(aiData)) {
+      if (v && String(v).trim()) {
+        updatedData[k] = v;
+      } else {
+        delete updatedData[k];
+      }
+    }
 
     await base44.entities.InstructionSheet.update(sheetId, { organized_data: updatedData });
     onUpdated(updatedData);
